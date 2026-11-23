@@ -1,0 +1,4 @@
+version: 0
+fields:
+  - {id: BadId, layer: protocol, type: string, unit: none, source: scan-live, class: P, redaction: null, status: planned}
+  - {id: extra_key, layer: protocol, type: string, unit: none, source: scan-live, class: P, redaction: null, status: planned, colour: red}

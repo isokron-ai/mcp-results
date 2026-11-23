@@ -1,0 +1,22 @@
+version: 0
+sources:
+  - id: example-source
+    name: "Example source"
+    url: https://example.invalid/
+    reads: "Synthetic example."
+    terms_url: https://example.invalid/terms
+    data_licence: unknown
+    republish: facts-only
+    rate_limits: "None stated."
+    notes: "Fixture."
+    reviewed_at: null
+  - id: other-source
+    name: Other
+    url: https://example.invalid/other
+    reads: "Synthetic."
+    terms_url: TODO-verify
+    data_licence: unknown
+    republish: unknown
+    rate_limits: unknown
+    notes: ""
+    reviewed_at: 2026-11-23

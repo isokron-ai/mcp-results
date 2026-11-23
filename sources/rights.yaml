@@ -1,0 +1,189 @@
+# Source-rights register, version 0.
+#
+# One entry for every outside source the loop reads in its first phases. It
+# records what we read, which terms apply, and what we may republish. It is
+# not legal advice and nothing here has had a formal review yet
+# (reviewed_at: null).
+#
+# republish
+#   facts-only  we may publish facts and counts we derive from the source;
+#               any upstream-authored text follows the text-layer rule in
+#               fields/registry.yaml (class P-t)
+#   no-text     we read the content as data and publish only our own
+#               measurements of it, never the text itself
+#   unknown     not settled; treat as "do not republish" until it is
+#
+# Where a value could not be confirmed, it says "unknown" or "TODO-verify".
+# Those are open items, not answers.
+version: 0
+sources:
+  - id: mcp-registry-official
+    name: "Official MCP registry"
+    url: https://registry.modelcontextprotocol.io/
+    reads: "Server entries (names, versions, repository links, packages, environment variable declarations, remotes) through the public list API, incrementally by update time and in a daily full snapshot."
+    terms_url: TODO-verify
+    data_licence: unknown
+    republish: unknown
+    rate_limits: "None found in the docs we have read. We pace requests ourselves."
+    notes: "API docs: https://registry.modelcontextprotocol.io/docs. The code repository is MIT-licensed, which does not by itself say anything about the entries. Find the registry's terms for API use and entry data before publishing anything derived from it. Remote-only entries are counted, never contacted."
+    reviewed_at: null
+  - id: npm-registry
+    name: "npm registry"
+    url: https://registry.npmjs.org/
+    reads: "Package version documents (versions, publish times, repository, gitHead, bin, engines, integrity, attestations) and the attestations endpoint."
+    terms_url: https://docs.npmjs.com/policies/terms
+    data_licence: "Each package carries its own licence. Registry metadata: none stated that we found."
+    republish: facts-only
+    rate_limits: "No numbers published that we found. We pace requests and cache."
+    notes: "See also https://docs.npmjs.com/policies/open-source-terms. Maintainer names and emails are never stored or published. Package descriptions are upstream text and go through the text-layer rule."
+    reviewed_at: null
+  - id: npm-changes-feed
+    name: "npm registry _changes feed"
+    url: https://replicate.npmjs.com/_changes
+    reads: "Sequence-numbered change events, read from the last seen sequence, to find new and updated packages."
+    terms_url: https://docs.npmjs.com/policies/terms
+    data_licence: unknown
+    republish: facts-only
+    rate_limits: unknown
+    notes: "We keep the cursor and the package names we match, not the feed. Confirm that this host is still the supported way to follow changes (TODO-verify)."
+    reviewed_at: null
+  - id: npm-downloads-api
+    name: "npm download counts API"
+    url: https://api.npmjs.org/downloads/
+    reads: "Last-day, last-week and last-month download counts per package, and per-version counts for the last seven days."
+    terms_url: https://github.com/npm/registry/blob/main/docs/download-counts.md
+    data_licence: unknown
+    republish: facts-only
+    rate_limits: "Documented in the download-counts page; not copied here (TODO-verify exact limits)."
+    notes: "The page describes the API and its limits; it is not a terms document. The npm terms in the npm-registry entry apply. Per-version counts expire after seven days, so we snapshot weekly."
+    reviewed_at: null
+  - id: pypi-json-api
+    name: "PyPI JSON and simple APIs"
+    url: https://pypi.org/
+    reads: "Project JSON (licence, requires_dist, requires_python, project URLs, file digests and upload times) and the simple index with project status and provenance links."
+    terms_url: https://policies.python.org/pypi.org/Terms-of-Service/
+    data_licence: "Each project carries its own licence. Index metadata: none stated that we found."
+    republish: facts-only
+    rate_limits: "No numbers published that we found. API docs: https://docs.pypi.org/api/. We pace requests and cache."
+    notes: "Author and maintainer emails are never stored or published."
+    reviewed_at: null
+  - id: pypi-serial-log
+    name: "PyPI changelog by serial, and RSS feeds"
+    url: https://pypi.org/rss/updates.xml
+    reads: "New and updated projects, read from the last seen serial (XML-RPC changelog_since_serial) and the RSS update feeds."
+    terms_url: https://policies.python.org/pypi.org/Terms-of-Service/
+    data_licence: unknown
+    republish: facts-only
+    rate_limits: "Not stated that we found. Confirm the XML-RPC method is still supported for this use (TODO-verify)."
+    notes: "We keep the cursor and the project names we match, not the feed."
+    reviewed_at: null
+  - id: pypistats
+    name: "pypistats.org"
+    url: https://pypistats.org/
+    reads: "Recent download counts per package over a rolling window of about 180 days."
+    terms_url: https://pypistats.org/about
+    data_licence: unknown
+    republish: facts-only
+    rate_limits: "IP-based limiting across the whole site. The site asks regular users to cache results."
+    notes: "The site's own pages ask bulk users to cache or use the public dataset instead. We snapshot because the window expires."
+    reviewed_at: null
+  - id: crates-io-dump
+    name: "crates.io daily database dump"
+    url: https://static.crates.io/db-dump.tar.gz
+    reads: "Crates, versions, dependencies, owners (not stored) and recent download counts, from the daily dump, instead of per-crate API calls."
+    terms_url: TODO-verify
+    data_licence: unknown
+    republish: unknown
+    rate_limits: "One download per day."
+    notes: "Candidate terms pages: https://crates.io/policies and https://crates.io/data-access. Both are single-page app routes that we could not read from a script, so neither is confirmed. Download counts in the dump cover a limited period. Publisher identities are never stored or published."
+    reviewed_at: null
+  - id: crates-io-api
+    name: "crates.io API"
+    url: https://crates.io/api/v1/
+    reads: "Single-crate details where the dump is not enough (for example trusted-publishing flags)."
+    terms_url: TODO-verify
+    data_licence: unknown
+    republish: unknown
+    rate_limits: "Earlier notes say the crawler policy asks for a descriptive User-Agent with contact details and about one request per second. Not re-read (TODO-verify)."
+    notes: "Use the dump first. Same candidate terms pages as the crates.io dump entry."
+    reviewed_at: null
+  - id: go-module-index
+    name: "Go module index"
+    url: https://index.golang.org/
+    reads: "New module versions, read from a timestamp cursor, to find Go modules that may be MCP servers."
+    terms_url: TODO-verify
+    data_licence: unknown
+    republish: unknown
+    rate_limits: unknown
+    notes: "The proxy and index pages link a privacy policy and a security policy but we did not find a terms page. Check the Go module mirror, index and checksum database service terms."
+    reviewed_at: null
+  - id: go-module-proxy
+    name: "Go module proxy"
+    url: https://proxy.golang.org/
+    reads: "Version lists, version info (time) and go.mod files for modules found through the index."
+    terms_url: TODO-verify
+    data_licence: "Each module carries its own licence."
+    republish: unknown
+    rate_limits: unknown
+    notes: "Same open question as the Go module index entry. Module source is not republished."
+    reviewed_at: null
+  - id: github-rest-api
+    name: "GitHub REST API"
+    url: https://docs.github.com/en/rest
+    reads: "Repository facts (identity, dates, topics, licence, counts), releases, community profile, rulesets, security advisories counts, private-vulnerability-reporting flag, and the dependency-graph SBOM, with conditional requests."
+    terms_url: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+    data_licence: "No licence on the platform data. Repository content keeps each repository's own licence."
+    republish: facts-only
+    rate_limits: "Per-token hourly limits and secondary limits: https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api"
+    notes: "Acceptable use policy: https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies. No personal data is published: contributors are counted, not listed, and users are stored by numeric ID. Traffic and referrer statistics need push access and are not read."
+    reviewed_at: null
+  - id: github-graphql-api
+    name: "GitHub GraphQL API"
+    url: https://docs.github.com/en/graphql
+    reads: "Repository metadata in one query per repository (the same facts as the REST entry)."
+    terms_url: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+    data_licence: "As for the REST API."
+    republish: facts-only
+    rate_limits: "Point-based limits: https://docs.github.com/en/graphql/overview/rate-limits-and-node-limits-for-the-graphql-api"
+    notes: "Same acceptable-use and personal-data rules as the REST entry."
+    reviewed_at: null
+  - id: github-repo-contents
+    name: "GitHub repository contents (git clone)"
+    url: https://github.com/
+    reads: "Source files, manifests, lockfiles, workflow files and licence files of target repositories, read as data at a pinned commit. Also the Docker MCP catalogue definitions repository."
+    terms_url: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+    data_licence: "Each repository's own licence, which may be none."
+    republish: no-text
+    rate_limits: "Git clones do not spend API quota. No separate limit found."
+    notes: "Code is never executed in this step. We publish measurements of the code, not the code. Upstream text is published only under the text-layer rule when the licence allows it."
+    reviewed_at: null
+  - id: gh-archive
+    name: "GH Archive"
+    url: https://www.gharchive.org/
+    reads: "Hourly archives of public GitHub events, used for star, fork, push and release history from before our first scan."
+    terms_url: TODO-verify
+    data_licence: unknown
+    republish: unknown
+    rate_limits: "None stated on the site; the files are plain downloads."
+    notes: "The site describes the data as events reported by the GitHub API and gives no licence terms that we found. GitHub's own terms apply to the underlying events. Actor logins are never stored or published; only aggregate counts."
+    reviewed_at: null
+  - id: deps-dev
+    name: "deps.dev API"
+    url: https://docs.deps.dev/api/
+    reads: "Package version facts (licences, advisories, provenance), project facts, and dependents counts."
+    terms_url: TODO-verify
+    data_licence: "Earlier desk notes say CC BY 4.0. We did not find that stated on the API page (TODO-verify)."
+    republish: unknown
+    rate_limits: unknown
+    notes: "Treat as unconfirmed until the terms are found. Check whether any third-party data it relays has narrower terms."
+    reviewed_at: null
+  - id: osv
+    name: "OSV (Open Source Vulnerabilities)"
+    url: https://osv.dev/
+    reads: "Advisories for our targets' own packages and their dependencies, through the query API and the published data dumps."
+    terms_url: https://google.github.io/osv.dev/data/
+    data_licence: "Varies by upstream database. The data-sources page lists CC-BY 4.0, CC0 1.0, MIT, Apache-2.0 and, for some sources, more restrictive terms."
+    republish: facts-only
+    rate_limits: unknown
+    notes: "We publish advisory IDs and our own matches. Do not copy advisory text in bulk: its licence follows the source database, and some are not open."
+    reviewed_at: null

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/isokron-ai/mcp-results/schema/rights.schema.json",
+  "title": "Source-rights register (sources/rights.yaml)",
+  "type": "object",
+  "required": ["version", "sources"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "minimum": 0 },
+    "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["id", "name", "url", "reads", "terms_url", "data_licence", "republish", "rate_limits", "notes", "reviewed_at"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://\\S+$" },
+        "reads": { "type": "string", "minLength": 1 },
+        "terms_url": { "type": "string", "pattern": "^(https://\\S+|TODO-verify)$" },
+        "data_licence": { "type": "string", "minLength": 1 },
+        "republish": { "enum": ["facts-only", "no-text", "unknown"] },
+        "rate_limits": { "type": "string", "minLength": 1 },
+        "notes": { "type": "string" },
+        "reviewed_at": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+      }
+    }
+  }
+}

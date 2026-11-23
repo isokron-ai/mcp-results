@@ -1,0 +1,5 @@
+# synthetic fixture
+version: 0
+fields:
+  - {id: sample_field, layer: protocol, type: string, unit: none, source: scan-live, class: P, redaction: null, status: planned}
+  - {id: sample_text, layer: protocol, type: string, unit: chars, source: scan-live, class: P-t, redaction: [R1, R2], status: planned}

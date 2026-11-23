@@ -1,0 +1,11 @@
+version: 0
+sources:
+  - id: example-source
+    name: "Example source"
+    url: https://example.invalid/
+    reads: "Synthetic example."
+    terms_url: not a url
+    data_licence: unknown
+    republish: everything
+    rate_limits: "None stated."
+    notes: "Fixture."

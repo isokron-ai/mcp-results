@@ -1,0 +1,43 @@
+Data licence
+============
+
+The data in this repository that is our own measurements is licensed under the
+Creative Commons Attribution 4.0 International licence (CC BY 4.0).
+
+Legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+Plain-language summary: https://creativecommons.org/licenses/by/4.0/
+
+Plain summary (not a substitute for the legal code)
+---------------------------------------------------
+
+You may share and adapt our measurements for any purpose, including
+commercially, as long as you:
+
+  - give appropriate credit to IsoKron,
+  - link to the licence, and
+  - say whether you made changes.
+
+There are no further restrictions.
+
+What this licence does not cover
+--------------------------------
+
+Third-party material keeps its own terms and is not covered by this licence.
+This includes:
+
+  - text written by the authors of the servers we test, such as tool,
+    prompt and resource descriptions, instructions, README excerpts and
+    schemas with descriptive text;
+  - data we read from other sources (registries, package indexes, code
+    hosting services and similar), which stays under the terms of those
+    sources;
+  - names, logos and trademarks of other parties.
+
+Where we republish upstream text, the row carries the upstream licence and a
+source link. Our CC BY 4.0 licence does not clear third-party rights for you.
+Check the upstream terms before you reuse that material.
+
+Personal data is not part of the data we publish and is not licensed here.
+
+The source code in this repository is licensed separately under the MIT
+licence (see LICENSE).
