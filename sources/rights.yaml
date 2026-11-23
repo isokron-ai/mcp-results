@@ -2,8 +2,9 @@
 #
 # One entry for every outside source the loop reads in its first phases. It
 # records what we read, which terms apply, and what we may republish. It is
-# not legal advice and nothing here has had a formal review yet
-# (reviewed_at: null).
+# not legal advice and nothing here has had a formal legal review. An entry
+# with a reviewed_at date has had its governing text read from the primary
+# source on that date; reviewed_at: null means it has not.
 #
 # republish
 #   facts-only  we may publish facts and counts we derive from the source;
@@ -21,32 +22,32 @@ sources:
     name: "Official MCP registry"
     url: https://registry.modelcontextprotocol.io/
     reads: "Server entries (names, versions, repository links, packages, environment variable declarations, remotes) through the public list API, incrementally by update time and in a daily full snapshot."
-    terms_url: TODO-verify
-    data_licence: unknown
-    republish: unknown
-    rate_limits: "None found in the docs we have read. We pace requests ourselves."
-    notes: "API docs: https://registry.modelcontextprotocol.io/docs. The code repository is MIT-licensed, which does not by itself say anything about the entries. Find the registry's terms for API use and entry data before publishing anything derived from it. Remote-only entries are counted, never contacted."
-    reviewed_at: null
+    terms_url: https://modelcontextprotocol.io/registry/terms-of-service
+    data_licence: "Registry Data (server metadata such as names, descriptions, URLs, identifiers) is dedicated to the public domain under CC0 1.0 (Terms of Service, item 10). The dedication covers Registry Data only, not the packages the entries point to."
+    republish: facts-only
+    rate_limits: "No numeric limit published. The aggregator guide (https://modelcontextprotocol.io/registry/registry-aggregators) expects scraping 'on a regular but infrequent basis (e.g., once per hour)', incremental sync with updated_since, compression, and backoff on rate limiting instead of repeated full crawls."
+    notes: "Terms effective 2025-09-02; the registry is in preview and offers no uptime or durability guarantee. Item 6 allows saying 'This data comes from the Official MCP Registry' but not implying affiliation or endorsement; item 11 notes entries can hold personal data such as GitHub usernames, which we do not publish. Entries with status 'deleted' were removed under the moderation policy (https://modelcontextprotocol.io/registry/moderation-policy) and should be dropped."
+    reviewed_at: 2026-11-23
   - id: npm-registry
     name: "npm registry"
     url: https://registry.npmjs.org/
     reads: "Package version documents (versions, publish times, repository, gitHead, bin, engines, integrity, attestations) and the attestations endpoint."
-    terms_url: https://docs.npmjs.com/policies/terms
+    terms_url: https://docs.npmjs.com/policies/open-source-terms
     data_licence: "Each package carries its own licence. Registry metadata: none stated that we found."
     republish: facts-only
-    rate_limits: "No numbers published that we found. We pace requests and cache."
-    notes: "See also https://docs.npmjs.com/policies/open-source-terms. Maintainer names and emails are never stored or published. Package descriptions are upstream text and go through the text-layer rule."
-    reviewed_at: null
+    rate_limits: "No request-rate number is published for the registry API. The crawler policy (https://docs.npmjs.com/policies/crawlers) sets 1 request per second or less for experimental crawling of the npmjs.com website and points bulk users to replication."
+    notes: "Open Source Terms (last updated 2022-03-10): replicating data from the Public Registry through the Public APIs is allowed, but automating access to the website is not. The same terms limit npm data about the security of packages (vulnerability and audit reports, supplementary security documentation) to the user's own personal or internal business use and forbid giving others access to or copies of it, so keep attestation and provenance data out of public output until a human has read that clause against it. Maintainer names and emails are never stored or published; package descriptions go through the text-layer rule."
+    reviewed_at: 2026-11-23
   - id: npm-changes-feed
     name: "npm registry _changes feed"
     url: https://replicate.npmjs.com/_changes
     reads: "Sequence-numbered change events, read from the last seen sequence, to find new and updated packages."
-    terms_url: https://docs.npmjs.com/policies/terms
-    data_licence: unknown
+    terms_url: https://docs.npmjs.com/policies/open-source-terms
+    data_licence: "None stated for registry metadata. The crawler policy (https://docs.npmjs.com/policies/crawlers) says a full copy of all metadata via CouchDB replication is acceptable under npm's terms of use."
     republish: facts-only
-    rate_limits: unknown
-    notes: "We keep the cursor and the package names we match, not the feed. Confirm that this host is still the supported way to follow changes (TODO-verify)."
-    reviewed_at: null
+    rate_limits: "No number published for replicate.npmjs.com. The crawler policy gives 1 request per second or less for website crawling and says replication is the intended route for bulk metadata."
+    notes: "Checked 2026-11-23: replicate.npmjs.com answers /_changes and is the host documented for replication in https://github.com/npm/registry/blob/main/docs/REPLICATE-API.md (skimdb.npmjs.com is marked deprecated there). We keep the cursor and the package names we match, not the feed."
+    reviewed_at: 2026-11-23
   - id: npm-downloads-api
     name: "npm download counts API"
     url: https://api.npmjs.org/downloads/
@@ -54,9 +55,9 @@ sources:
     terms_url: https://github.com/npm/registry/blob/main/docs/download-counts.md
     data_licence: unknown
     republish: facts-only
-    rate_limits: "Documented in the download-counts page; not copied here (TODO-verify exact limits)."
-    notes: "The page describes the API and its limits; it is not a terms document. The npm terms in the npm-registry entry apply. Per-version counts expire after seven days, so we snapshot weekly."
-    reviewed_at: null
+    rate_limits: "No request-rate number published. Documented query limits: bulk queries at most 128 packages and 365 days of data; other queries at most 18 months, earliest date 2015-01-10; scoped packages are not supported in bulk queries (https://github.com/npm/registry/blob/main/docs/download-counts.md)."
+    notes: "The page describes the API and its limits; it is not a terms document, so the npm Open Source Terms (https://docs.npmjs.com/policies/open-source-terms) apply. Per-version counts cover the last seven days only, so we snapshot weekly."
+    reviewed_at: 2026-11-23
   - id: pypi-json-api
     name: "PyPI JSON and simple APIs"
     url: https://pypi.org/
@@ -64,7 +65,7 @@ sources:
     terms_url: https://policies.python.org/pypi.org/Terms-of-Service/
     data_licence: "Each project carries its own licence. Index metadata: none stated that we found."
     republish: facts-only
-    rate_limits: "No numbers published that we found. API docs: https://docs.pypi.org/api/. We pace requests and cache."
+    rate_limits: "No rate limit at the edge for the JSON, RSS and Index APIs because of CDN caching; PyPI reserves the right to ban irresponsible use. It asks for a unique User-Agent with contact details, no thousands of requests within minutes, and respect for ETag (https://docs.pypi.org/api/)."
     notes: "Author and maintainer emails are never stored or published."
     reviewed_at: null
   - id: pypi-serial-log
@@ -74,9 +75,9 @@ sources:
     terms_url: https://policies.python.org/pypi.org/Terms-of-Service/
     data_licence: unknown
     republish: facts-only
-    rate_limits: "Not stated that we found. Confirm the XML-RPC method is still supported for this use (TODO-verify)."
-    notes: "We keep the cursor and the project names we match, not the feed."
-    reviewed_at: null
+    rate_limits: "XML-RPC has 'a very restrictive rate limit' with no number published; the docs example sleeps 1 second between calls (https://dev.pypi.org/api-reference/xml-rpc/). RSS, JSON and Index APIs have no edge rate limit (https://docs.pypi.org/api/)."
+    notes: "Checked 2026-11-23: changelog_since_serial still answers on https://pypi.org/pypi, but PyPI's docs say XML-RPC is planned for deprecation and that no new integration should use it; for periodic checks they point to the RSS feeds. Plan to move this reader to the RSS feeds. We keep the cursor and the project names we match, not the feed."
+    reviewed_at: 2026-11-23
   - id: pypistats
     name: "pypistats.org"
     url: https://pypistats.org/
@@ -91,42 +92,42 @@ sources:
     name: "crates.io daily database dump"
     url: https://static.crates.io/db-dump.tar.gz
     reads: "Crates, versions, dependencies, owners (not stored) and recent download counts, from the daily dump, instead of per-crate API calls."
-    terms_url: TODO-verify
-    data_licence: unknown
-    republish: unknown
-    rate_limits: "One download per day."
-    notes: "Candidate terms pages: https://crates.io/policies and https://crates.io/data-access. Both are single-page app routes that we could not read from a script, so neither is confirmed. Download counts in the dump cover a limited period. Publisher identities are never stored or published."
-    reviewed_at: null
+    terms_url: https://crates.io/data-access
+    data_licence: "None stated. The tarball README calls the dump 'a dump of the public information in the crates.io database'; individual crates keep their own licences. The policies page text is CC BY 4.0, which covers the policy, not the data."
+    republish: facts-only
+    rate_limits: "No limit stated for the dump; the policy says 'No rate limits apply to static.crates.io at present'. The dump refreshes every 24 hours and we download it once a day."
+    notes: "The Data Access page (source: https://github.com/rust-lang/crates.io/blob/main/svelte/src/routes/data-access/%2Bpage.svelte) lists the dump as a supported route and says nothing about republishing, so we publish derived counts and facts only. The live version_downloads table keeps 90 days; older history is at https://static.crates.io/archive/version-downloads/. The dump holds user names and owners, which we never store or publish."
+    reviewed_at: 2026-11-23
   - id: crates-io-api
     name: "crates.io API"
     url: https://crates.io/api/v1/
     reads: "Single-crate details where the dump is not enough (for example trusted-publishing flags)."
-    terms_url: TODO-verify
-    data_licence: unknown
-    republish: unknown
-    rate_limits: "Earlier notes say the crawler policy asks for a descriptive User-Agent with contact details and about one request per second. Not re-read (TODO-verify)."
-    notes: "Use the dump first. Same candidate terms pages as the crates.io dump entry."
-    reviewed_at: null
+    terms_url: https://crates.io/data-access
+    data_licence: "None stated. Crates keep their own licences."
+    republish: facts-only
+    rate_limits: "At most 1 request per second, and a User-Agent that identifies the application, ideally with a contact route (Data Access policy, https://crates.io/data-access). The policy asks users to try the sparse index, CDN, RSS and dump first."
+    notes: "Policy text read from its source in the rust-lang/crates.io repository, because the site pages are single-page routes that answer plain scripted requests with 403. Violations can get requests blocked with a 403 that points to the policy, so keep the User-Agent set. Use the dump first."
+    reviewed_at: 2026-11-23
   - id: go-module-index
     name: "Go module index"
     url: https://index.golang.org/
     reads: "New module versions, read from a timestamp cursor, to find Go modules that may be MCP servers."
-    terms_url: TODO-verify
-    data_licence: unknown
-    republish: unknown
-    rate_limits: unknown
-    notes: "The proxy and index pages link a privacy policy and a security policy but we did not find a terms page. Check the Go module mirror, index and checksum database service terms."
-    reviewed_at: null
+    terms_url: https://index.golang.org/
+    data_licence: "None stated for the index. The feed lists module paths, versions and timestamps."
+    republish: facts-only
+    rate_limits: "No request-rate number published. The feed returns at most 2000 entries per request (limit parameter, default 2000, max 2000)."
+    notes: "No terms of service exists on index.golang.org, proxy.golang.org or sum.golang.org; checked https://index.golang.org/, https://proxy.golang.org/, https://proxy.golang.org/privacy (Google privacy policy, last updated 2019-08-06) and the go.dev /terms and /legal paths (404). The services page describes the feed for discovery, so we publish derived facts only; a human should decide whether that silence is enough."
+    reviewed_at: 2026-11-23
   - id: go-module-proxy
     name: "Go module proxy"
     url: https://proxy.golang.org/
     reads: "Version lists, version info (time) and go.mod files for modules found through the index."
-    terms_url: TODO-verify
+    terms_url: https://proxy.golang.org/
     data_licence: "Each module carries its own licence."
-    republish: unknown
-    rate_limits: unknown
-    notes: "Same open question as the Go module index entry. Module source is not republished."
-    reviewed_at: null
+    republish: facts-only
+    rate_limits: "No request-rate number published. Bulk users are told to use the /cached-only endpoint; the FAQ says operators may disable speculative refresh or work with a user whose traffic is too high (https://proxy.golang.org/)."
+    notes: "No terms of service exists for the proxy; see the Go module index entry for what was checked. The page says cached modules expire if their LICENSE does not allow indefinite caching, so do not assume modules may be redistributed. Module source is not republished."
+    reviewed_at: 2026-11-23
   - id: github-rest-api
     name: "GitHub REST API"
     url: https://docs.github.com/en/rest
@@ -161,22 +162,22 @@ sources:
     name: "GH Archive"
     url: https://www.gharchive.org/
     reads: "Hourly archives of public GitHub events, used for star, fork, push and release history from before our first scan."
-    terms_url: TODO-verify
-    data_licence: unknown
-    republish: unknown
-    rate_limits: "None stated on the site; the files are plain downloads."
-    notes: "The site describes the data as events reported by the GitHub API and gives no licence terms that we found. GitHub's own terms apply to the underlying events. Actor logins are never stored or published; only aggregate counts."
-    reviewed_at: null
+    terms_url: https://www.gharchive.org/
+    data_licence: "None stated for the data. The site calls the archives 'JSON encoded events as reported by the GitHub API'. The code is MIT and the site content is CC BY 4.0 (https://github.com/igrigorik/gharchive.org#licenses), which do not cover the events."
+    republish: facts-only
+    rate_limits: "None stated; archives are plain hourly file downloads. The BigQuery copy gives 1 TB of queries per month free; BigQuery use is under Google's own terms."
+    notes: "The site invites downloading the raw hourly files and processing them, and has no terms page, so GitHub's terms govern the underlying events. Actor logins are never stored or published; only aggregate counts."
+    reviewed_at: 2026-11-23
   - id: deps-dev
     name: "deps.dev API"
     url: https://docs.deps.dev/api/
     reads: "Package version facts (licences, advisories, provenance), project facts, and dependents counts."
-    terms_url: TODO-verify
-    data_licence: "Earlier desk notes say CC BY 4.0. We did not find that stated on the API page (TODO-verify)."
-    republish: unknown
-    rate_limits: unknown
-    notes: "Treat as unconfirmed until the terms are found. Check whether any third-party data it relays has narrower terms."
-    reviewed_at: null
+    terms_url: https://developers.google.com/terms
+    data_licence: "Data deps.dev generates (resolved dependencies, advisory statistics, associations) is CC BY 4.0. Data it relays (package metadata, project data, advisories, Scorecard) keeps the source's terms; the API page says to read those sources' documentation (https://docs.deps.dev/api/v3/)."
+    republish: facts-only
+    rate_limits: "No rate limit or quota published. Response caps: Query returns at most 1000 results and GetProjectPackageVersions at most 1500 versions. Clients may cache API data."
+    notes: "The API page says use is subject to the Google API Terms of Service (last modified 2021-11-09) and that caching is expressly permitted. Those terms (section 4e) bar copying or distributing API content unless the content owner permits it, so rely on the CC BY 4.0 grant for generated data, credit deps.dev, and do not copy relayed text."
+    reviewed_at: 2026-11-23
   - id: osv
     name: "OSV (Open Source Vulnerabilities)"
     url: https://osv.dev/
