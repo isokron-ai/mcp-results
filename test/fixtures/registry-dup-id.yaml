@@ -1,0 +1,4 @@
+version: 0
+fields:
+  - {id: sample_field, layer: protocol, type: string, unit: none, source: scan-live, class: P, redaction: null, status: planned}
+  - {id: sample_field, layer: runtime, type: string, unit: none, source: scan-live, class: P, redaction: null, status: planned}

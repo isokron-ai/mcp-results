@@ -1,0 +1,3 @@
+version: 0
+fields:
+  - {id: sample_field, layer: protocol, type: string, unit: none, source: scan-live, class: Z, redaction: null, status: planned}

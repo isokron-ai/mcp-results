@@ -1,0 +1,13 @@
+{
+  "name": "mcp-results",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Schemas, registers and validators for IsoKron's MCP server measurements. Not publishing yet.",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "test": "node --test 'test/*.test.mjs'"
+  }
+}
