@@ -8,6 +8,6 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "validate": "node scripts/validate.mjs",
-    "test": "node --test test/"
+    "test": "node --test 'test/*.test.mjs'"
   }
 }

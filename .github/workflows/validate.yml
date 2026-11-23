@@ -25,6 +25,6 @@ jobs:
           node-version: 22
           package-manager-cache: false
       - name: Unit tests
-        run: node --test test/
+        run: node --test 'test/*.test.mjs'
       - name: Validate registry and rights register
         run: node scripts/validate.mjs

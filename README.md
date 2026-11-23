@@ -17,7 +17,7 @@ This repository will hold the results of IsoKron's tool-qa loop: our measurement
 Run the checks with:
 
 ```
-node --test test/
+node --test 'test/*.test.mjs'
 node scripts/validate.mjs
 ```
 
