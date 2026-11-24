@@ -8,7 +8,7 @@ This repository will hold the results of IsoKron's tool-qa loop: our measurement
 
 | Path | What it is |
 |---|---|
-| `fields/registry.yaml` | The field registry: every field we capture or plan to capture, with its type, unit, source and publish class. Fields a merged lane writes today are `active`; the rest are `planned`. |
+| `fields/registry.yaml` | The field registry: every field we capture or plan to capture, with its type, unit, source and publish class. Fields emitted by merged worker code (or set by tool-qa ingest) are `active`, though the lane may be disabled (see tool-qa `pump/workflows.json`); the rest are `planned`. |
 | `sources/rights.yaml` | The source-rights register: each outside source we read, the terms that apply, and what we may republish. Unknowns are marked `unknown` or `TODO-verify`. |
 | `schema/` | JSON Schemas (draft 2020-12) for the two files above. |
 | `scripts/validate.mjs` | Checks both files against the schemas. No dependencies. Needs Node 22 or later. |

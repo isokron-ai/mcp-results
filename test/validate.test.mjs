@@ -100,7 +100,8 @@ test('registry uses only the documented class letters', () => {
   assert.ok(doc.fields.every((f) => ['planned', 'active'].includes(f.status)), 'nothing is deprecated yet');
 });
 
-// The fields each merged lane writes today (mcp-check corpus/scan-static.mjs observationsOf and
+// The fields merged worker code emits, whether or not its lane is enabled in the live loop (tool-qa
+// pump/workflows.json says which are) (mcp-check corpus/scan-static.mjs observationsOf and
 // corpus/live-probe.mjs FIELDS + TOOL_LIST_FIELDS; tool-qa meta/github.mjs FIELDS + scorecard_api_result and
 // meta/registry.mjs), and those tool-qa ingest sets for every result (R-COV-02).
 const WRITTEN = {
@@ -119,13 +120,18 @@ const WRITTEN = {
   'tool-qa ingest': ['fault_side', 'coverage_state'],
 };
 
-test('R-RES-01: the fields merged lanes write today are active, and only those; the rest stay planned', () => {
+test('R-RES-01: the fields emitted by merged worker code (the lane may be disabled) are active, and only those; the rest stay planned', () => {
   const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
   const active = doc.fields.filter((f) => f.status === 'active').map((f) => f.id).sort();
   const written = [...new Set(Object.values(WRITTEN).flat())].sort();
   assert.deepEqual(active, written);
   assert.equal(doc.fields.length, 357);
   assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 357 - written.length);
+  // The header says what active means, and that it is not the live loop's lane state.
+  const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
+  assert.match(header, /active: emitted by merged worker code/);
+  assert.match(header, /pump\/workflows\.json/);
+  assert.doesNotMatch(header, /written today/);
 });
 
 test('R-RES-02: fault_side and coverage_state are declared for the fault side tool-qa ingest records', () => {
