@@ -146,6 +146,11 @@ fields:
   - {id: tool_wire_bytes, layer: protocol, type: integer, unit: bytes, source: scan-live, class: P, redaction: null, status: planned}
   # The live tool list as one: how many tools, and its hash (the checker engine's catalog hash, sha256 of the
   # canonical JSON of the list). Per-tool fields cannot give either. Written by the live-probe lane of mcp-check.
+  # tool_list_sha256 is not catalog_snapshot_id. tool_list_sha256 is measured by the worker: the checker engine's
+  # hash of the tools alone, as the engine reads them (each tool's definition, canonical JSON), so two servers or two
+  # runs with the same tools have the same value whatever else they answer. catalog_snapshot_id (longitudinal) is
+  # set by ingest: the content address of a stored snapshot, sha256 of the JCS of the initialize answer together with
+  # the tools/list answer, so it changes when serverInfo, capabilities or instructions change though the tools do not.
   - {id: tool_count, layer: protocol, type: integer, unit: count, source: scan-live, class: P, redaction: null, status: planned}
   - {id: tool_list_sha256, layer: protocol, type: hash, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: pagination_behaviour, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: [R2], status: planned}
@@ -393,6 +398,7 @@ fields:
   - {id: plan_hash_and_drift, layer: write_tests, type: object, unit: none, source: writecheck, class: X, redaction: null, status: planned}
   - {id: barrier_pair_repetitions, layer: write_tests, type: array, unit: none, source: writecheck, class: B, redaction: null, status: planned}
   - {id: annotation_honesty_behaviour_confirmed, layer: write_tests, type: object, unit: none, source: writecheck, class: B, redaction: null, status: planned}
+  # catalog_snapshot_id: sha256(JCS(initialize + tools/list)), set by ingest; see tool_list_sha256 for the difference.
   - {id: catalog_snapshot_id, layer: longitudinal, type: hash, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: catalog_fingerprints, layer: longitudinal, type: object, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: tools_added_removed_renamed, layer: longitudinal, type: object, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
