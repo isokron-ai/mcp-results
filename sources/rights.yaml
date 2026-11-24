@@ -36,7 +36,7 @@ sources:
     data_licence: "Each package carries its own licence. Registry metadata: none stated that we found."
     republish: facts-only
     rate_limits: "No request-rate number is published for the registry API. The crawler policy (https://docs.npmjs.com/policies/crawlers) sets 1 request per second or less for experimental crawling of the npmjs.com website and points bulk users to replication."
-    notes: "Open Source Terms (last updated 2022-03-10): replicating data from the Public Registry through the Public APIs is allowed, but automating access to the website is not. The same terms limit npm data about the security of packages (vulnerability and audit reports, supplementary security documentation) to the user's own personal or internal business use and forbid giving others access to or copies of it, so keep attestation and provenance data out of public output until a human has read that clause against it. Maintainer names and emails are never stored or published; package descriptions go through the text-layer rule."
+    notes: "Open Source Terms (last updated 2022-03-10): replicating data from the Public Registry through the Public APIs is allowed, but automating access to the website is not. Owner decision (2026-11-23): everything we collect may be published except actual security issues. That covers npm attestation and provenance data, so npm_attestations is class P. Maintainer names and emails are never stored or published; package descriptions go through the text-layer rule."
     reviewed_at: 2026-11-23
   - id: npm-changes-feed
     name: "npm registry _changes feed"
@@ -177,6 +177,16 @@ sources:
     republish: facts-only
     rate_limits: "No rate limit or quota published. Response caps: Query returns at most 1000 results and GetProjectPackageVersions at most 1500 versions. Clients may cache API data."
     notes: "The API page says use is subject to the Google API Terms of Service (last modified 2021-11-09) and that caching is expressly permitted. Those terms (section 4e) bar copying or distributing API content unless the content owner permits it, so rely on the CC BY 4.0 grant for generated data, credit deps.dev, and do not copy relayed text."
+    reviewed_at: 2026-11-23
+  - id: openssf-scorecard-api
+    name: "OpenSSF Scorecard REST API"
+    url: https://api.scorecard.dev/
+    reads: "The published Scorecard result for a repository (overall score, date, Scorecard version, scanned commit, each check's name and score), one GET per repository at /projects/github.com/<owner>/<repo>."
+    terms_url: https://github.com/ossf/scorecard#scorecard-rest-api
+    data_licence: "CDLA-Permissive-2.0 (https://cdla.dev/permissive-2-0/). The Scorecard README says data provided by the REST API is licensed under the CDLA Permissive 2.0. The licence puts no conditions on Results (outcomes of analysing the data); sharing the data itself requires making the agreement text available with it."
+    republish: facts-only
+    rate_limits: "No rate limit or quota published. The README says API results are cached by a CDN and purged when new results arrive."
+    notes: "Covers only repositories in Scorecard's weekly scan (from ossf/scorecard-infra) or that publish results from the Scorecard GitHub Action; most repositories answer 404. Scores from the weekly scan omit the CI-Tests, Contributors and Dependency-Update-Tool checks. The API page (a Swagger UI, spec at https://api.scorecard.dev/swagger.json) states no terms of its own. We keep scores, dates, versions and check names, not the check reasons or details text. The BigQuery public dataset is no longer available, per the README."
     reviewed_at: 2026-11-23
   - id: osv
     name: "OSV (Open Source Vulnerabilities)"
