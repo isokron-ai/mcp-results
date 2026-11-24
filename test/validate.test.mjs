@@ -195,7 +195,7 @@ test('the release-diff fields are declared: artifacts and summary public, findin
   const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
   const byId = new Map(doc.fields.map((f) => [f.id, f]));
   const want = {
-    release_artifacts: ['source_build', 'array', 'release-diff', 'P', 'null'],
+    release_artifacts: ['source_build', 'array', 'release-diff', 'P', 'R1'],
     release_diff_summary: ['source_build', 'array', 'release-diff', 'P', 'R1'],
     release_diff_findings: ['source_build', 'array', 'release-diff', 'P-h', 'R1'],
     release_diff_held: ['source_build', 'array', 'release-diff', 'S', 'R1'],
