@@ -97,7 +97,52 @@ test('registry uses only the documented class letters', () => {
   const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
   const classes = new Set(doc.fields.map((f) => f.class));
   for (const c of classes) assert.ok(['P', 'P-s', 'P-h', 'P-t', 'PA', 'B', 'S', 'M', 'X'].includes(c), c);
-  assert.ok(doc.fields.every((f) => f.status === 'planned'));
+  assert.ok(doc.fields.every((f) => ['planned', 'active'].includes(f.status)), 'nothing is deprecated yet');
+});
+
+// The fields merged worker code emits, whether or not its lane is enabled in the live loop (tool-qa
+// pump/workflows.json says which are) (mcp-check corpus/scan-static.mjs observationsOf and
+// corpus/live-probe.mjs FIELDS + TOOL_LIST_FIELDS; tool-qa meta/github.mjs FIELDS + scorecard_api_result and
+// meta/registry.mjs), and those tool-qa ingest sets for every result (R-COV-02).
+const WRITTEN = {
+  'scan-static': ['commit_sha', 'commit_date', 'registration_provenance'],
+  'live-probe': ['subject_id', 'registry_name', 'registry_version', 'registry_package_register_type', 'registry_package_identifier',
+    'registry_package_version', 'registry_package_transport', 'registry_package_runtime_hint', 'package_purl', 'oci_digest', 'transports_offered',
+    'protocol_era', 'protocol_negotiated', 'client_version', 'server_info', 'capabilities_flags', 'capabilities_jcs_sha256', 'instructions_len_chars',
+    'instructions_sha256', 'startup_ms', 'latency_cold_ms', 'startup_without_config', 'config_state', 'catalog_per_config_state', 'stdout_noise_lines',
+    'stderr_counts', 'list_changed_notifications', 'pagination_behaviour', 'step_telemetry', 'sandbox_tier', 'runner_env', 'our_tool_versions',
+    'observation_coverage', 'install_phase_behaviour', 'network_event', 'error_taxonomy_code', 'static_vs_live_agreement', 'commit_sha', 'commit_date',
+    'tool_count', 'tool_list_sha256'],
+  'meta-github': ['repo_core', 'repo_owner_type', 'repo_popularity', 'owner_org_facts', 'releases_summary', 'issues_prs_summary',
+    'contributors_counts', 'security_posture', 'branch_rules_public', 'community_profile', 'workflow_health', 'scorecard_api_result'],
+  'meta-registry': ['registry_entry_history', 'npm_version_doc', 'npm_maintainer_count_and_change', 'npm_attestations', 'pypi_info',
+    'pypi_project_status', 'pypi_provenance', 'crates_crate_facts', 'go_module_facts', 'depsdev_facts'],
+  'tool-qa ingest': ['fault_side', 'coverage_state'],
+};
+
+test('R-RES-01: the fields emitted by merged worker code (the lane may be disabled) are active, and only those; the rest stay planned', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const active = doc.fields.filter((f) => f.status === 'active').map((f) => f.id).sort();
+  const written = [...new Set(Object.values(WRITTEN).flat())].sort();
+  assert.deepEqual(active, written);
+  assert.equal(doc.fields.length, 357);
+  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 357 - written.length);
+  // The header says what active means, and that it is not the live loop's lane state.
+  const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
+  assert.match(header, /active: emitted by merged worker code/);
+  assert.match(header, /pump\/workflows\.json/);
+  assert.doesNotMatch(header, /written today/);
+});
+
+test('R-RES-02: fault_side and coverage_state are declared for the fault side tool-qa ingest records', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const byId = new Map(doc.fields.map((f) => [f.id, f]));
+  for (const id of ['fault_side', 'coverage_state']) {
+    const f = byId.get(id);
+    assert.ok(f, id);
+    assert.deepEqual([f.layer, f.type, f.source, f.class, f.redaction], ['tool_telemetry', 'enum', 'ingest-compact', 'P', null], id);
+  }
+  assert.ok(byId.has('fail_reason'), 'fail_reason stays for the per-stage detail');
 });
 
 test('rights: every TODO-verify is a deliberate marker, and none claims a licence it cannot show', () => {
