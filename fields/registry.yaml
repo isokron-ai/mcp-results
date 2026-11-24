@@ -313,6 +313,7 @@ fields:
   - {id: nuget_maven_oci_facts, layer: repo_ecosystem, type: object, unit: none, source: meta-registry, class: P, redaction: null, status: planned}
   - {id: depsdev_facts, layer: repo_ecosystem, type: object, unit: none, source: meta-registry, class: P, redaction: null, status: planned}
   - {id: scorecard_result, layer: repo_ecosystem, type: object, unit: none, source: scan-deep, class: P, redaction: null, status: planned}
+  - {id: scorecard_api_result, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: null, status: planned}
   - {id: best_practices_badge_level, layer: repo_ecosystem, type: enum, unit: none, source: meta-github, class: P, redaction: null, status: planned}
   - {id: osv_package_vulnerabilities, layer: repo_ecosystem, type: array, unit: none, source: meta-registry, class: P, redaction: null, status: planned}
   - {id: registry_listing_elsewhere, layer: repo_ecosystem, type: object, unit: none, source: discover, class: P, redaction: null, status: planned}
@@ -321,6 +322,7 @@ fields:
   - {id: vendor_docs_link_to_repo, layer: repo_ecosystem, type: boolean, unit: none, source: meta-github, class: P, redaction: null, status: planned}
   - {id: maintainer_change_events, layer: repo_ecosystem, type: object, unit: none, source: meta-registry, class: PA, redaction: null, status: planned}
   - {id: metadata_observation, layer: repo_ecosystem, type: object, unit: none, source: meta-registry, class: P, redaction: null, status: planned}
+  - {id: registry_entry_history, layer: repo_ecosystem, type: array, unit: none, source: meta-registry, class: P, redaction: null, status: planned}
   - {id: startup_ms, layer: runtime, type: integer, unit: ms, source: scan-live, class: P, redaction: null, status: planned}
   - {id: cold_vs_warm_start, layer: runtime, type: object, unit: ms, source: scan-live, class: P, redaction: null, status: planned}
   - {id: cpu_time_summary, layer: runtime, type: object, unit: ms, source: scan-live, class: P, redaction: null, status: planned}
