@@ -125,8 +125,8 @@ test('R-RES-01: the fields emitted by merged worker code (the lane may be disabl
   const active = doc.fields.filter((f) => f.status === 'active').map((f) => f.id).sort();
   const written = [...new Set(Object.values(WRITTEN).flat())].sort();
   assert.deepEqual(active, written);
-  assert.equal(doc.fields.length, 357);
-  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 357 - written.length);
+  assert.equal(doc.fields.length, 362);
+  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 362 - written.length);
   // The header says what active means, and that it is not the live loop's lane state.
   const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
   assert.match(header, /active: emitted by merged worker code/);
@@ -143,6 +143,26 @@ test('R-RES-02: fault_side and coverage_state are declared for the fault side to
     assert.deepEqual([f.layer, f.type, f.source, f.class, f.redaction], ['tool_telemetry', 'enum', 'ingest-compact', 'P', null], id);
   }
   assert.ok(byId.has('fail_reason'), 'fail_reason stays for the per-stage detail');
+});
+
+test('R-RES-03: the drift signals are declared: tag targets and image digests per observation, and the moves derived from them', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const byId = new Map(doc.fields.map((f) => [f.id, f]));
+  const want = {
+    git_tag_targets: ['repo_ecosystem', 'object', 'meta-github', 'P'],
+    git_tag_map_sha256: ['repo_ecosystem', 'hash', 'meta-github', 'P'],
+    oci_tag_digests: ['repo_ecosystem', 'array', 'meta-registry', 'P'],
+    git_tag_moves: ['longitudinal', 'array', 'ingest-compact', 'P'],
+    oci_tag_moves: ['longitudinal', 'array', 'ingest-compact', 'P'],
+    catalog_drift_same_version: ['longitudinal', 'object', 'ingest-compact', 'P-h'],
+  };
+  for (const [id, [layer, type, source, cls]] of Object.entries(want)) {
+    const f = byId.get(id);
+    assert.ok(f, id);
+    assert.deepEqual([f.layer, f.type, f.source, f.class, f.redaction], [layer, type, source, cls, null], id);
+    // Not active until the tool-qa code that emits them is merged (R-RES-01).
+    assert.equal(f.status, 'planned', id);
+  }
 });
 
 test('rights: every TODO-verify is a deliberate marker, and none claims a licence it cannot show', () => {
