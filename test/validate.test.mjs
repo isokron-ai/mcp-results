@@ -125,8 +125,9 @@ test('R-RES-01: the fields emitted by merged worker code (the lane may be disabl
   const active = doc.fields.filter((f) => f.status === 'active').map((f) => f.id).sort();
   const written = [...new Set(Object.values(WRITTEN).flat())].sort();
   assert.deepEqual(active, written);
-  assert.equal(doc.fields.length, 368);
-  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 368 - written.length);
+  // 357 on 23 Nov, + 6 live-probe oracle fields (#8), + 5 drift-signal fields (#9), + 4 release-diff fields.
+  assert.equal(doc.fields.length, 372);
+  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 372 - written.length);
   // The header says what active means, and that it is not the live loop's lane state.
   const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
   assert.match(header, /active: emitted by merged worker code/);
@@ -187,5 +188,22 @@ test('the live-probe oracle stage fields are declared: SDK clients, the conforma
     const f = byId.get(id);
     assert.ok(f, id);
     assert.deepEqual([f.layer, f.type, f.source, f.class, f.redaction], [...w, null], id);
+  }
+});
+
+test('the release-diff fields are declared: artifacts and summary public, findings after a human check, held security-class', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const byId = new Map(doc.fields.map((f) => [f.id, f]));
+  const want = {
+    release_artifacts: ['source_build', 'array', 'release-diff', 'P', 'R1'],
+    release_diff_summary: ['source_build', 'array', 'release-diff', 'P', 'R1'],
+    release_diff_findings: ['source_build', 'array', 'release-diff', 'P-h', 'R1'],
+    release_diff_held: ['source_build', 'array', 'release-diff', 'S', 'R1'],
+  };
+  for (const [id, w] of Object.entries(want)) {
+    const f = byId.get(id);
+    assert.ok(f, id);
+    const red = f.redaction === null || f.redaction === 'null' ? 'null' : f.redaction.join(',');
+    assert.deepEqual([f.layer, f.type, f.source, f.class, red, f.status], [...w, 'planned'], id);
   }
 });

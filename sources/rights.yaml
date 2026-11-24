@@ -31,7 +31,7 @@ sources:
   - id: npm-registry
     name: "npm registry"
     url: https://registry.npmjs.org/
-    reads: "Package version documents (versions, publish times, repository, gitHead, bin, engines, integrity, attestations) and the attestations endpoint."
+    reads: "Package version documents (versions, publish times, repository, gitHead, bin, engines, integrity, attestations), the attestations endpoint, and (release-diff) the published tarball of a version, read as data and never installed."
     terms_url: https://docs.npmjs.com/policies/open-source-terms
     data_licence: "Each package carries its own licence. Registry metadata: none stated that we found."
     republish: facts-only
@@ -61,7 +61,7 @@ sources:
   - id: pypi-json-api
     name: "PyPI JSON and simple APIs"
     url: https://pypi.org/
-    reads: "Project JSON (licence, requires_dist, requires_python, project URLs, file digests and upload times) and the simple index with project status and provenance links."
+    reads: "Project JSON (licence, requires_dist, requires_python, project URLs, file digests and upload times), the simple index with project status and provenance links, the integrity API's PEP 740 attestations, and (release-diff) a version's sdist and one wheel from files.pythonhosted.org, read as data and never installed."
     terms_url: https://policies.python.org/pypi.org/Terms-of-Service/
     data_licence: "Each project carries its own licence. Index metadata: none stated that we found."
     republish: facts-only
@@ -151,7 +151,7 @@ sources:
   - id: github-repo-contents
     name: "GitHub repository contents (git clone)"
     url: https://github.com/
-    reads: "Source files, manifests, lockfiles, workflow files and licence files of target repositories, read as data at a pinned commit. Also the Docker MCP catalogue definitions repository."
+    reads: "Source files, manifests, lockfiles, workflow files and licence files of target repositories, read as data at a pinned commit (a git clone, or the commit's source archive from codeload.github.com), and the tag list over Git's smart HTTP protocol. Also the Docker MCP catalogue definitions repository."
     terms_url: https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
     data_licence: "Each repository's own licence, which may be none."
     republish: no-text
@@ -171,7 +171,7 @@ sources:
   - id: deps-dev
     name: "deps.dev API"
     url: https://docs.deps.dev/api/
-    reads: "Package version facts (licences, advisories, provenance), project facts, and dependents counts."
+    reads: "Package version facts (licences, advisories, provenance), project facts, dependents counts, and (release-diff) the package versions that name a repository as their source (GetProjectPackageVersions, v3alpha)."
     terms_url: https://developers.google.com/terms
     data_licence: "Data deps.dev generates (resolved dependencies, advisory statistics, associations) is CC BY 4.0. Data it relays (package metadata, project data, advisories, Scorecard) keeps the source's terms; the API page says to read those sources' documentation (https://docs.deps.dev/api/v3/)."
     republish: facts-only
