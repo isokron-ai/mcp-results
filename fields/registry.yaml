@@ -32,7 +32,8 @@
 #        length, token counts and derived features are public, and the text
 #        stays private.
 #   PA   Public only as aggregates (counts, distributions, cells of at least
-#        five). The per-server value stays private.
+#        five). The per-server value stays private. Counts never include
+#        class S items until their disclosure window has ended.
 #   B    A behaviour verdict, including hardening findings and tool issues
 #        (for example a read-only tool that can write). Public for each server,
 #        by company and repo name, once a person has confirmed it. Publication
