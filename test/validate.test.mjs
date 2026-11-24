@@ -125,8 +125,8 @@ test('R-RES-01: the fields emitted by merged worker code (the lane may be disabl
   const active = doc.fields.filter((f) => f.status === 'active').map((f) => f.id).sort();
   const written = [...new Set(Object.values(WRITTEN).flat())].sort();
   assert.deepEqual(active, written);
-  assert.equal(doc.fields.length, 357);
-  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 357 - written.length);
+  assert.equal(doc.fields.length, 363);
+  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 363 - written.length);
   // The header says what active means, and that it is not the live loop's lane state.
   const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
   assert.match(header, /active: emitted by merged worker code/);
@@ -149,5 +149,23 @@ test('rights: every TODO-verify is a deliberate marker, and none claims a licenc
   const doc = parseYaml(readFileSync(path.join(root, 'sources/rights.yaml'), 'utf8'));
   for (const s of doc.sources) {
     if (s.republish !== 'unknown') assert.notEqual(s.terms_url, 'TODO-verify', s.id);
+  }
+});
+
+test('the live-probe oracle stage fields are declared: SDK clients, the conformance suite, the stage and its disagreements', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const byId = new Map(doc.fields.map((f) => [f.id, f]));
+  const want = {
+    sdk_client_results: ['protocol', 'array', 'scan-live', 'P'],
+    conformance_suite: ['protocol', 'object', 'scan-live', 'P'],
+    conformance_summary: ['protocol', 'object', 'scan-live', 'P'],
+    conformance_checks: ['protocol', 'array', 'scan-live', 'P'],
+    oracle_stage: ['tool_telemetry', 'object', 'scan-live', 'P'],
+    oracle_disagreements: ['tool_telemetry', 'array', 'scan-live', 'X'],
+  };
+  for (const [id, w] of Object.entries(want)) {
+    const f = byId.get(id);
+    assert.ok(f, id);
+    assert.deepEqual([f.layer, f.type, f.source, f.class, f.redaction], [...w, null], id);
   }
 });
