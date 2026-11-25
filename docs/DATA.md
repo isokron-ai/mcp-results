@@ -22,10 +22,10 @@ The shape is `schema/record.schema.json`.
 
 | Part | What it says |
 |---|---|
-| `record_id` | sha256 of `<attempt_id>\n<run_key>` (a run key is one result's). The same result always has the same id. A result's position in its attempt is not published: gaps in positions would show that a result was held back. |
+| `record_id` | sha256 of `<attempt_id>\n<run_key>` (a run key is one result's). The same result always has the same id. A result's position in its attempt and its fence (a counter shared by every result) are not published: gaps in positions would show that a result was held back. |
 | `lane`, `subject` | The lane, and the server: its registry id, its repository and the commit that was read. Published by company and repository name. |
 | `measured` | When the run started and finished. |
-| `provenance` | Where the result came from: the run key and attempt that tool-qa dispatched, the fence, the worker workflow (repository, file, commit, run id), the tool and oracle versions used and a digest of the settings. The worker run is a public GitHub Actions run in the named repository. |
+| `provenance` | Where the result came from: the run key and attempt that tool-qa dispatched, the worker workflow (repository, file, commit, run id), the tool and oracle versions used and a digest of the settings. The worker run is a public GitHub Actions run in the named repository. |
 | `coverage` | Whether the server was assessed, and if not, whose limit it was. See below. |
 | `observations` | The measurements: `{field, value, class, basis}`. `field` is an id in `fields/registry.yaml`. `class` is the registry class (P or P-s); `basis` is `measured`, or `read_from_source` for P-s. `masked: true` means a secret-looking span in text written by the server's author was replaced. A `null` value comes with `why`. |
 | `content_sha256` | sha256 of the canonical record without this field. |

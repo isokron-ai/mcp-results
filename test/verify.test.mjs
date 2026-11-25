@@ -285,6 +285,8 @@ test('R-RES-11: no position in the attempt is part of a record or its id, and th
   try {
     rewrite(r, 'results/live-probe/2026-11-24.jsonl', (recs) => { recs[0].provenance.item_index = 2; });
     assert.match(problems(r), /item_index: unexpected property/);
+    rewrite(r, 'results/live-probe/2026-11-24.jsonl', (recs) => { delete recs[0].provenance.item_index; recs[0].provenance.fence = 7; });
+    assert.match(problems(r), /fence: unexpected property/);
   } finally { r.done(); }
   const j = (...p) => p.join('');
   for (const [name, v] of [['gitlab-pat', j('gl', 'pat-', 'a1B2c3D4e5F6g7H8i9J0')], ['stripe-secret-key', j('sk', '_live_', 'a1B2c3D4e5F6g7H8i9J0k1L2')], ['google-api-key', j('AI', 'za', 'Sy', 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q')], ['generic-sk-key', j('sk', '-', 'a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8')], ['url-credentials', j('https://deploy', ':', 'hunter2hunter2', '@', 'example.org/x')]]) {
