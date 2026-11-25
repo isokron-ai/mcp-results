@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/isokron-ai/mcp-results/schema/correction.schema.json",
+  "title": "A correction (one line of data/corrections.jsonl)",
+  "description": "supersede: the target record is replaced by another published record. retract: the target stays in its file and consumers must ignore it. purge: the target is removed from the files (secret, personal data, rights claim, security hold); only its id and the reason remain.",
+  "type": "object",
+  "required": ["schema", "kind", "target", "replacement", "reason", "corrected_at"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "mcp-results/correction/1" },
+    "kind": { "enum": ["supersede", "retract", "purge"] },
+    "target": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "replacement": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+    "reason": { "enum": ["wrong_result", "tool_defect", "wrong_subject", "right_of_reply", "secret", "personal_data", "rights_claim", "security_hold", "other"] },
+    "note": { "type": "string" },
+    "corrected_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$" }
+  }
+}

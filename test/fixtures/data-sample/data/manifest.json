@@ -1,0 +1,70 @@
+{
+  "schema": "mcp-results/manifest/1",
+  "licence": "CC-BY-4.0",
+  "note": "Separate measurements, never one score. A record says what was measured, by which tool version, and when. A skipped or unassessed record says whose limit it was; it is not a failed check.",
+  "registry": {
+    "version": 0,
+    "sha256": "e6cde3e16f0de30691c76b55b729734b04d0b7763084cff33f9e50a063eb5562"
+  },
+  "totals": {
+    "records": 4,
+    "subjects": 3,
+    "files": 3,
+    "corrections": 0
+  },
+  "lanes": {
+    "live-probe": {
+      "records": 3,
+      "subjects": 2,
+      "coverage": {
+        "assessed": 2,
+        "subject": 1
+      },
+      "fault_side": {
+        "subject": 1
+      },
+      "first_finished_at": "2026-11-24T10:05:00Z",
+      "last_finished_at": "2026-11-25T09:00:00Z"
+    },
+    "scan-static": {
+      "records": 1,
+      "subjects": 1,
+      "coverage": {
+        "unassessed_tool": 1
+      },
+      "fault_side": {
+        "tool": 1
+      },
+      "first_finished_at": "2026-11-24T11:00:00Z",
+      "last_finished_at": "2026-11-24T11:00:00Z"
+    }
+  },
+  "files": [
+    {
+      "path": "results/live-probe/2026-11-24.jsonl",
+      "lane": "live-probe",
+      "day": "2026-11-24",
+      "records": 2,
+      "bytes": 2155,
+      "sha256": "f7ad56983429626880f02b68b954410c031f0bd69b1f7c5bc0488211be76e754"
+    },
+    {
+      "path": "results/live-probe/2026-11-25.jsonl",
+      "lane": "live-probe",
+      "day": "2026-11-25",
+      "records": 1,
+      "bytes": 1067,
+      "sha256": "db810f5dadea051a3025c3ae51e890b1cd7cb0482290ecc7f6edcb48d2109141"
+    },
+    {
+      "path": "results/scan-static/2026-11-24.jsonl",
+      "lane": "scan-static",
+      "day": "2026-11-24",
+      "records": 1,
+      "bytes": 1024,
+      "sha256": "2a56f4d6bacd80d384dca8f254ea0d794fe0e595da452f1ee17cdb5a52b60a2f"
+    }
+  ],
+  "corrections": null,
+  "prev_manifest_sha256": null
+}

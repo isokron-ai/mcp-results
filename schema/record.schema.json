@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/isokron-ai/mcp-results/schema/record.schema.json",
+  "title": "A published result record (one line of data/results/<lane>/<day>.jsonl)",
+  "description": "One accepted tool-qa result for one subject, one lane, one run. Separate measurements, never one score: there is no pass/fail and no score field, and a skip says whose limit it was.",
+  "type": "object",
+  "required": ["schema", "record_id", "lane", "subject", "measured", "provenance", "coverage", "observations", "content_sha256"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "mcp-results/record/1" },
+    "record_id": { "$ref": "#/$defs/sha256" },
+    "lane": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "subject": {
+      "type": "object",
+      "required": ["id", "repo", "sha"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "pattern": "^[^\\s]+$" },
+        "repo": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$" },
+        "sha": { "type": ["string", "null"], "pattern": "^([0-9a-f]{40}|[0-9a-f]{64})$" }
+      }
+    },
+    "measured": {
+      "type": "object",
+      "required": ["started_at", "finished_at"],
+      "additionalProperties": false,
+      "properties": {
+        "started_at": { "$ref": "#/$defs/time" },
+        "finished_at": { "$ref": "#/$defs/time" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["run_key", "attempt_id", "workflow", "tools", "oracles", "settings_manifest_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "run_key": { "$ref": "#/$defs/sha256" },
+        "attempt_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "workflow": {
+          "type": "object",
+          "required": ["repo", "file", "sha", "run_id", "run_attempt"],
+          "additionalProperties": false,
+          "properties": {
+            "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$" },
+            "file": { "type": "string", "pattern": "^\\.github/workflows/[A-Za-z0-9_.-]{1,100}\\.ya?ml$" },
+            "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "run_id": { "type": "integer", "minimum": 1 },
+            "run_attempt": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "tools": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/component" } },
+        "oracles": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+        "settings_manifest_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["state", "fault_side", "attribution", "skips"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "enum": ["assessed", "unassessed_tool", "unassessed_unknown", "unassessed_infra", "subject", "excluded"] },
+        "fault_side": { "enum": [null, "tool", "unknown", "infra", "subject", "policy"] },
+        "attribution": { "enum": ["assessed", "our_limit", "not_stated", "infrastructure", "server_condition", "our_policy"] },
+        "skips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["stage", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "stage": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+              "reason": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+              "fault": { "enum": ["tool", "subject", "infra", "policy"] },
+              "retryable": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "value", "class", "basis"],
+        "additionalProperties": false,
+        "properties": {
+          "field": { "type": "string", "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$" },
+          "value": {},
+          "class": { "enum": ["P", "P-s"] },
+          "basis": { "enum": ["measured", "read_from_source"] },
+          "why": { "type": "string" },
+          "stage": { "type": "string" },
+          "masked": { "const": true }
+        }
+      }
+    },
+    "content_sha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "time": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})$" },
+    "component": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z0-9@][A-Za-z0-9@/._-]{0,127}$" },
+        "version": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.+:_-]{0,127}$" }
+      }
+    }
+  }
+}
