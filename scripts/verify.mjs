@@ -22,8 +22,10 @@
 //   7. the manifest's totals and per-lane counts recompute from the files
 //   8. corrections: supersede and retract name records that exist, a supersede names its
 //      replacement, a purge names a record that is gone
-//   --history  also walks the git history of data/manifest.json and checks the chain
-//              (prev_manifest_sha256) from the first version to the last
+//   --history  also walks the git history: the chain of manifests (prev_manifest_sha256), and that
+//              no commit changes or removes a record an earlier one published (append-only)
+//   --base <ref>  also checks the working tree against that ref the same way: every record in it
+//              is still there with the same content_sha256, unless a purge correction names it
 //
 // With no data/ folder it passes: nothing is published yet.
 
@@ -45,7 +47,8 @@ export function canonical(value) {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
   return `{${Object.keys(value).filter((k) => value[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
 }
-export const recordIdOf = (p) => sha256(`${p.attempt_id}\n${p.item_index}\n${p.run_key}`);
+// No item position in the id or the record: a gap in positions would show that a result was held.
+export const recordIdOf = (p) => sha256(`${p.attempt_id}\n${p.run_key}`);
 export const contentDigestOf = (record) => { const { content_sha256: _d, ...rest } = record; return sha256(canonical(rest)); };
 
 const DAY_FILE = /^results\/([a-z0-9][a-z0-9-]{0,63})\/(\d{4}-\d{2}-\d{2})\.jsonl$/;
@@ -62,6 +65,11 @@ const SECRET_RULES = [
   ['github-fine-grained-pat', /\bgithub_pat_[A-Za-z0-9_]{82}\b/],
   ['slack-token', /\bxox[abposr]-[A-Za-z0-9-]{10,}/],
   ['npm-token', /\bnpm_[A-Za-z0-9]{36}\b/],
+  ['gitlab-pat', /\bglpat-[A-Za-z0-9_-]{20,}/],
+  ['stripe-secret-key', /\b[sr]k_live_[A-Za-z0-9]{20,}\b/],
+  ['google-api-key', /\bAIza[0-9A-Za-z_-]{35}/],
+  ['generic-sk-key', /\bsk-(?=[A-Za-z0-9_-]*\d)(?=[A-Za-z0-9_-]*[A-Za-z])[A-Za-z0-9_-]{32,}/],
+  ['url-credentials', /\b[a-z][a-z0-9+.-]{1,20}:\/\/[^\s:@/?#"'<>]{1,256}:(?![$%{<[])[^\s@/?#"'<>]{6,256}@[A-Za-z0-9.-]+/],
   ['jwt', /(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/],
   ['canary', /ISOKRON_CANARY_[A-Za-z0-9]{8,}/],
 ];
@@ -171,12 +179,18 @@ export function verifyData(root, { registryPath } = {}) {
     for (const k of keysOf(rest)) if (COMBINED.has(k)) problems.push(`${at}: a key named "${k}": results are separate measurements, never one score or a verdict`);
     const [fault, attribution] = COVERAGE[r.coverage.state];
     if (r.coverage.fault_side !== fault || r.coverage.attribution !== attribution) problems.push(`${at}: coverage ${r.coverage.state} does not go with fault side ${r.coverage.fault_side} and attribution ${r.coverage.attribution}`);
+    if (r.coverage.state === 'assessed' && r.observations.length === 0) problems.push(`${at}: assessed with no observations: a result whose fields were all withheld is not published, so it cannot read as a clean assessment`);
     if (r.coverage.skips.length === 0 && r.coverage.state !== 'assessed') problems.push(`${at}: no skips but coverage is ${r.coverage.state}`);
     if (r.coverage.skips.length > 0 && r.coverage.state === 'assessed') problems.push(`${at}: skips but coverage is assessed`);
     if (r.coverage.skips.some((s) => s.fault === 'tool') && r.coverage.state !== 'unassessed_tool') problems.push(`${at}: a skip of ours (fault tool) must make the state unassessed_tool, not ${r.coverage.state}`);
-    if (r.coverage.skips.length && r.coverage.skips.every((s) => s.fault)) {
-      const f = FAULT_ORDER.find((x) => r.coverage.skips.some((s) => s.fault === x));
-      if (f !== undefined && r.coverage.fault_side !== f) problems.push(`${at}: fault side ${r.coverage.fault_side}, the skips say ${f}`);
+    // Skips that state their fault: the recorded side may not rank below the strongest of them
+    // (a skip with no stated fault can only raise it, never lower it). All stated: it is exactly that.
+    const stated = r.coverage.skips.filter((s) => s.fault);
+    if (stated.length) {
+      const strongest = FAULT_ORDER.find((x) => stated.some((s) => s.fault === x));
+      const have = FAULT_ORDER.indexOf(r.coverage.fault_side);
+      if (have === -1 || have > FAULT_ORDER.indexOf(strongest)) problems.push(`${at}: fault side ${r.coverage.fault_side} ranks below the stated skip fault ${strongest}`);
+      else if (stated.length === r.coverage.skips.length && r.coverage.fault_side !== strongest) problems.push(`${at}: fault side ${r.coverage.fault_side}, the skips say ${strongest}`);
     }
   }
 
@@ -224,6 +238,63 @@ export function verifyData(root, { registryPath } = {}) {
   return { problems, records: records.size, files: manifest.files.length };
 }
 
+/**
+ * What a data folder holds, for the append-only check: record id to content digest, the purged
+ * ids, and the correction lines. `ref` null reads the working tree.
+ */
+export function snapshot(root, ref, run = spawnSync) {
+  const records = new Map();
+  const corrections = [];
+  const read = (rel) => {
+    if (ref === null) { const f = path.join(root, rel); return existsSync(f) ? readFileSync(f, 'utf8') : null; }
+    const r = run('git', ['-C', root, 'show', `${ref}:${rel}`], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+    return r.status === 0 ? r.stdout : null;
+  };
+  let names;
+  if (ref === null) names = existsSync(path.join(root, 'data')) ? walk(path.join(root, 'data')).map((p) => `data/${p}`) : [];
+  else {
+    const r = run('git', ['-C', root, 'ls-tree', '-r', '--name-only', ref, '--', 'data'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    names = r.status === 0 ? r.stdout.split('\n').filter(Boolean) : [];
+  }
+  for (const rel of names) {
+    if (!DAY_FILE.test(rel.slice('data/'.length))) continue;
+    for (const line of (read(rel) ?? '').split('\n').filter(Boolean)) {
+      try { const r = JSON.parse(line); records.set(r.record_id, r.content_sha256); } catch { /* reported by verifyData */ }
+    }
+  }
+  for (const line of (read('data/corrections.jsonl') ?? '').split('\n').filter(Boolean)) corrections.push(line);
+  const purged = new Set(corrections.map((l) => { try { const c = JSON.parse(l); return c.kind === 'purge' ? c.target : null; } catch { return null; } }).filter(Boolean));
+  return { records, purged, corrections };
+}
+
+/** Append-only: every record in `base` is in `head` with the same digest, unless a purge in `head` names it; no correction line is dropped. */
+export function compareSnapshots(base, head, label = '') {
+  const problems = [];
+  for (const [id, hash] of base.records) {
+    if (!head.records.has(id)) { if (!head.purged.has(id)) problems.push(`${label}record ${id} was removed without a purge correction`); }
+    else if (head.records.get(id) !== hash) problems.push(`${label}record ${id} was changed after it was published`);
+  }
+  const have = new Set(head.corrections);
+  for (const l of base.corrections) if (!have.has(l)) problems.push(`${label}a correction line was removed or edited`);
+  return problems;
+}
+
+/** Published history is append-only: against a ref, and commit by commit through git history. */
+export function verifyAppendOnly(root, { base = null, history = false, run = spawnSync } = {}) {
+  const problems = [];
+  if (base) problems.push(...compareSnapshots(snapshot(root, base, run), snapshot(root, null, run), `against ${base}: `));
+  if (history) {
+    const log = run('git', ['-C', root, 'log', '--reverse', '--format=%H', '--', 'data'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    let before = null;
+    for (const c of log.stdout.split('\n').filter(Boolean)) {
+      const now = snapshot(root, c, run);
+      if (before) problems.push(...compareSnapshots(before, now, `${c.slice(0, 12)}: `));
+      before = now;
+    }
+  }
+  return problems;
+}
+
 /** The chain of data/manifest.json through git history: each prev_manifest_sha256 names the manifest it replaced. */
 export function verifyHistory(root, run = spawnSync) {
   const problems = [];
@@ -234,12 +305,12 @@ export function verifyHistory(root, run = spawnSync) {
   let before = null;
   for (const c of commits) {
     const show = git('show', `${c}:data/manifest.json`);
-    if (show.status !== 0) continue; // the file was removed in this commit
+    if (show.status !== 0) { problems.push(`${c.slice(0, 12)}: manifest.json was removed`); before = null; continue; }
     const bytes = show.stdout;
     let m;
     try { m = JSON.parse(bytes.toString('utf8')); } catch { problems.push(`${c.slice(0, 12)}: manifest.json is not JSON`); continue; }
     if (before === null) {
-      if (m.prev_manifest_sha256 !== null) problems.push(`${c.slice(0, 12)}: the first manifest has a prev_manifest_sha256`);
+      if (m.prev_manifest_sha256 !== null) problems.push(`${c.slice(0, 12)}: a manifest with no earlier one must have prev_manifest_sha256 null`);
     } else {
       const strip = (x) => canonical({ ...x, prev_manifest_sha256: null });
       const expected = strip(before.m) === strip(m) ? before.m.prev_manifest_sha256 : sha256(before.bytes);
@@ -253,9 +324,11 @@ export function verifyHistory(root, run = spawnSync) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const history = args.includes('--history');
-  const root = path.resolve(args.find((a) => !a.startsWith('--')) ?? path.join(here, '..'));
+  const bi = args.indexOf('--base');
+  const base = bi >= 0 ? args[bi + 1] : null;
+  const root = path.resolve(args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--base') ?? path.join(here, '..'));
   const r = verifyData(root);
-  const problems = [...r.problems, ...(history ? verifyHistory(root) : [])];
+  const problems = [...r.problems, ...(history ? verifyHistory(root) : []), ...(history || base ? verifyAppendOnly(root, { base, history }) : [])];
   if (problems.length) {
     for (const p of problems.slice(0, 200)) console.error(p);
     console.error(`\nverification failed: ${problems.length} problem(s)`);

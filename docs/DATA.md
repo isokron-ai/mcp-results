@@ -22,10 +22,10 @@ The shape is `schema/record.schema.json`.
 
 | Part | What it says |
 |---|---|
-| `record_id` | sha256 of `<attempt_id>\n<item_index>\n<run_key>`. The same result always has the same id. |
+| `record_id` | sha256 of `<attempt_id>\n<run_key>` (a run key is one result's). The same result always has the same id. A result's position in its attempt is not published: gaps in positions would show that a result was held back. |
 | `lane`, `subject` | The lane, and the server: its registry id, its repository and the commit that was read. Published by company and repository name. |
 | `measured` | When the run started and finished. |
-| `provenance` | Where the result came from: the run key and attempt that tool-qa dispatched, the item, the fence, the worker workflow (repository, file, commit, run id), the tool and oracle versions used and a digest of the settings. The worker run is a public GitHub Actions run in the named repository. |
+| `provenance` | Where the result came from: the run key and attempt that tool-qa dispatched, the fence, the worker workflow (repository, file, commit, run id), the tool and oracle versions used and a digest of the settings. The worker run is a public GitHub Actions run in the named repository. |
 | `coverage` | Whether the server was assessed, and if not, whose limit it was. See below. |
 | `observations` | The measurements: `{field, value, class, basis}`. `field` is an id in `fields/registry.yaml`. `class` is the registry class (P or P-s); `basis` is `measured`, or `read_from_source` for P-s. `masked: true` means a secret-looking span in text written by the server's author was replaced. A `null` value comes with `why`. |
 | `content_sha256` | sha256 of the canonical record without this field. |
@@ -45,6 +45,8 @@ The shape is `schema/record.schema.json`.
 
 When a result has several skips, our own limit wins: one skip of ours makes the state `unassessed_tool`. `coverage.skips` lists each skip: stage, reason, who it is down to, and whether it can be retried. A server with no record has not been measured in that lane; that is not a result.
 
+A result whose every field was left out (none is public) is not published at all: with no observations and no skip it would read as a clean assessment. A record with no observations is therefore always one with a skip, and says whose limit it was.
+
 ## What is published, and what is not
 
 A field is published only if the registry marks it `active` and class `P` or `P-s`. Fields of class P-h, B (until a person has confirmed them), P-t (text written by the server's author, unless a licence decision says otherwise), PA (aggregates only), X, S and M are not in the records. A security-class result (S, M) is held back whole until its disclosure window ends, and nothing in the data, the manifest or the logs says that it exists. Tool reports, captured server output and logs from the runs are never published, only the registry fields. See tool-qa `docs/PUBLISHING.md` for how.
@@ -63,11 +65,13 @@ It needs Node 22 or later and no packages. It checks that:
 3. each record passes the schema; its `record_id` and `content_sha256` recompute; it is in canonical form, in the file of its lane and day, in order, and no id is repeated;
 4. every observation is a field the registry publishes today, with the class the registry gives it;
 5. no value looks like a secret or an email, and no key is a score or a verdict;
-6. a skip that is our limit makes the state `unassessed_tool`;
+6. a skip that is our limit makes the state `unassessed_tool`, the fault side never ranks below the strongest skip that states its fault, and `assessed` always has observations;
 7. the manifest totals and per-lane counts recompute from the files;
 8. each correction points at what it should (below).
 
-To trace one record to its run: the `provenance.workflow` names the worker repository and the run id (`https://github.com/<repo>/actions/runs/<run_id>`). Commits that add data are made through the GitHub API by the loop and show as verified. The manifest of each commit names the one it replaced (`prev_manifest_sha256`), so removing a batch from history is visible.
+`--history` also walks every commit that touches `data/` and fails if one changes or removes a record an earlier one published (append-only), unless a `purge` correction names it, or drops a correction line. `--base <ref>` does the same between a ref and the working tree; the publishing workflow runs it against the commit it read.
+
+To trace one record to its run: the `provenance.workflow` names the worker repository and the run id (`https://github.com/<repo>/actions/runs/<run_id>`). Commits that add data are made through the GitHub API by the loop and show as verified. The manifest of each commit names the one it replaced (`prev_manifest_sha256`), so removing a batch from history is visible. The latest manifest's digest is meant to be anchored by a signed tag made by the owner after each merge; no step makes that tag yet (it cannot be made before the pull request is merged), so until it exists the chain protects against edits in the history but not against someone with write access rewriting the whole of it.
 
 ## Corrections and withdrawals
 

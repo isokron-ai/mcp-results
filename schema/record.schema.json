@@ -31,12 +31,11 @@
     },
     "provenance": {
       "type": "object",
-      "required": ["run_key", "attempt_id", "item_index", "fence", "workflow", "tools", "oracles", "settings_manifest_digest"],
+      "required": ["run_key", "attempt_id", "fence", "workflow", "tools", "oracles", "settings_manifest_digest"],
       "additionalProperties": false,
       "properties": {
         "run_key": { "$ref": "#/$defs/sha256" },
         "attempt_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
-        "item_index": { "type": "integer", "minimum": 0 },
         "fence": { "type": "integer", "minimum": 1 },
         "workflow": {
           "type": "object",

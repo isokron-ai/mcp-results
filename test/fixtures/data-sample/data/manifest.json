@@ -45,24 +45,24 @@
       "lane": "live-probe",
       "day": "2026-11-24",
       "records": 2,
-      "bytes": 2205,
-      "sha256": "ab7816cac46b0620f085b745a44589021b37e5fcb82e0673efaffe621e0772ab"
+      "bytes": 2175,
+      "sha256": "8bc2d77b526dab98efdbd02e27ef85cdcc2f5919c42335bde6c6661a0f2694b8"
     },
     {
       "path": "results/live-probe/2026-11-25.jsonl",
       "lane": "live-probe",
       "day": "2026-11-25",
       "records": 1,
-      "bytes": 1092,
-      "sha256": "9ff4e980aef15c355de8287eadcc5698a85b75e15b92ef5a52079c4609348f98"
+      "bytes": 1077,
+      "sha256": "6078a1025ca6cdfeaeb90a05449fca247372e86fb2d73a842e733a832493d9a6"
     },
     {
       "path": "results/scan-static/2026-11-24.jsonl",
       "lane": "scan-static",
       "day": "2026-11-24",
       "records": 1,
-      "bytes": 1049,
-      "sha256": "99df21c483893c37e8eceda1c3da3d64bdb1a588e72ba00e945f213c0f3d5a7f"
+      "bytes": 1034,
+      "sha256": "a773e61ba45b86391dc6045b75a3c38b846560e2cd7e97e82d9b08c6d378d35b"
     }
   ],
   "corrections": null,

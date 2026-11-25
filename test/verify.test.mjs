@@ -199,3 +199,119 @@ test('R-RES-08: the history of the manifest chains: each one names the one it re
     assert.ok(s2.length > 0);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+/** Rebuild the manifest from the files, as a careful forger would, so only the append-only rule can catch the change. */
+function regenManifest(r) {
+  const m = JSON.parse(readFileSync(r.data('manifest.json'), 'utf8'));
+  const gone = new Set();
+  const lanes = {};
+  const files = [];
+  for (const old of m.files) {
+    const f = r.data(old.path);
+    if (!existsSync(f)) continue;
+    const recs = readJsonl(f);
+    if (!recs.length) { rmSync(f); continue; }
+    const body = recs.map((x) => `${canonical(x)}\n`).join('');
+    files.push({ ...old, records: recs.length, bytes: Buffer.byteLength(body), sha256: sha(body) });
+    for (const x of recs) {
+      if (gone.has(x.record_id)) continue;
+      const l = (lanes[x.lane] ??= { records: 0, subjects: new Set(), coverage: {}, fault_side: {}, first: null, last: null });
+      l.records += 1; l.subjects.add(x.subject.id);
+      l.coverage[x.coverage.state] = (l.coverage[x.coverage.state] ?? 0) + 1;
+      if (x.coverage.fault_side) l.fault_side[x.coverage.fault_side] = (l.fault_side[x.coverage.fault_side] ?? 0) + 1;
+      const t = x.measured.finished_at;
+      if (!l.first || t < l.first) l.first = t;
+      if (!l.last || t > l.last) l.last = t;
+    }
+  }
+  m.files = files;
+  m.lanes = Object.fromEntries(Object.keys(lanes).sort().map((n) => [n, { records: lanes[n].records, subjects: lanes[n].subjects.size, coverage: Object.fromEntries(Object.entries(lanes[n].coverage).sort()), fault_side: Object.fromEntries(Object.entries(lanes[n].fault_side).sort()), first_finished_at: lanes[n].first, last_finished_at: lanes[n].last }]));
+  m.totals = { records: Object.values(lanes).reduce((n, l) => n + l.records, 0), subjects: new Set(Object.values(lanes).flatMap((l) => [...l.subjects])).size, files: files.length, corrections: m.totals.corrections };
+  writeFileSync(r.data('manifest.json'), `${JSON.stringify(m, null, 2)}\n`);
+}
+const gitIn = (dir, ...a) => spawnSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8' });
+
+test('R-RES-09: published history is append-only: an edited or deleted record fails even with a manifest regenerated to match', async () => {
+  const { verifyAppendOnly } = await import('../scripts/verify.mjs');
+  const f = 'results/live-probe/2026-11-24.jsonl';
+  for (const how of ['edit', 'delete']) {
+    const r = root();
+    try {
+      gitIn(r.dir, 'init', '-q'); gitIn(r.dir, 'add', '.'); gitIn(r.dir, 'commit', '-q', '-m', 'one');
+      const base = gitIn(r.dir, 'rev-parse', 'HEAD').stdout.trim();
+      assert.deepEqual(verifyAppendOnly(r.dir, { base }), [], 'unchanged data is fine');
+      if (how === 'edit') rewrite(r, f, (recs) => { recs[0].observations[0].value = 99; });
+      else rewrite(r, f, (recs) => { recs.shift(); });
+      regenManifest(r);
+      assert.deepEqual(verifyData(r.dir).problems.filter((p) => !/not in the registry/.test(p)), [], 'the forged data is internally consistent');
+      const p = verifyAppendOnly(r.dir, { base }).join('\n');
+      assert.match(p, how === 'edit' ? /was changed after it was published/ : /was removed without a purge correction/);
+      // history: commit it, and the walk finds it commit by commit
+      gitIn(r.dir, 'add', '.'); gitIn(r.dir, 'commit', '-q', '-m', 'two');
+      assert.match(verifyAppendOnly(r.dir, { history: true }).join('\n'), how === 'edit' ? /changed after/ : /removed without/);
+    } finally { r.done(); }
+  }
+});
+
+test('R-RES-09: a purge correction is the one way a record leaves; a correction line cannot be dropped', async () => {
+  const { verifyAppendOnly } = await import('../scripts/verify.mjs');
+  const r = root();
+  try {
+    gitIn(r.dir, 'init', '-q'); gitIn(r.dir, 'add', '.'); gitIn(r.dir, 'commit', '-q', '-m', 'one');
+    const base = gitIn(r.dir, 'rev-parse', 'HEAD').stdout.trim();
+    const f = 'results/live-probe/2026-11-24.jsonl';
+    const [gone] = readJsonl(r.data(f));
+    rewrite(r, f, (recs) => { recs.shift(); });
+    writeFileSync(r.data('corrections.jsonl'), `${JSON.stringify({ schema: 'mcp-results/correction/1', kind: 'purge', target: gone.record_id, replacement: null, reason: 'secret', corrected_at: '2026-11-26T08:00:00Z' })}\n`);
+    regenManifest(r);
+    assert.deepEqual(verifyAppendOnly(r.dir, { base }), []);
+    gitIn(r.dir, 'add', '.'); gitIn(r.dir, 'commit', '-q', '-m', 'purge');
+    const base2 = gitIn(r.dir, 'rev-parse', 'HEAD').stdout.trim();
+    writeFileSync(r.data('corrections.jsonl'), '');
+    assert.match(verifyAppendOnly(r.dir, { base: base2 }).join('\n'), /correction line was removed or edited/);
+  } finally { r.done(); }
+});
+
+test('R-RES-10: a result whose fields were all left out cannot read as a clean assessment', () => {
+  const r = root();
+  try {
+    rewrite(r, 'results/live-probe/2026-11-24.jsonl', (recs) => { recs[0].observations = []; });
+    assert.match(problems(r), /assessed with no observations/);
+  } finally { r.done(); }
+});
+
+test('R-RES-11: no position in the attempt is part of a record or its id, and the secret rules match the publisher\'s', () => {
+  const r = root();
+  try {
+    rewrite(r, 'results/live-probe/2026-11-24.jsonl', (recs) => { recs[0].provenance.item_index = 2; });
+    assert.match(problems(r), /item_index: unexpected property/);
+  } finally { r.done(); }
+  const j = (...p) => p.join('');
+  for (const [name, v] of [['gitlab-pat', j('gl', 'pat-', 'a1B2c3D4e5F6g7H8i9J0')], ['stripe-secret-key', j('sk', '_live_', 'a1B2c3D4e5F6g7H8i9J0k1L2')], ['google-api-key', j('AI', 'za', 'Sy', 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q')], ['generic-sk-key', j('sk', '-', 'a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8')], ['url-credentials', j('https://deploy', ':', 'hunter2hunter2', '@', 'example.org/x')]]) {
+    const r2 = root();
+    try {
+      rewrite(r2, 'results/live-probe/2026-11-24.jsonl', (recs) => { recs[0].observations.push({ field: 'stderr_counts', value: { s: v }, class: 'P', basis: 'measured' }); });
+      assert.match(problems(r2), new RegExp(`holds ${name}`), name);
+    } finally { r2.done(); }
+  }
+});
+
+test('R-RES-12: the fault side must not rank below a skip that states its fault, also when other skips state none; a manifest that disappears from history is a problem', () => {
+  const r = root();
+  try {
+    const f = 'results/scan-static/2026-11-24.jsonl';
+    rewrite(r, f, (recs) => { recs[0].coverage.skips.push({ stage: 'b', reason: 'trace_unavailable' }); recs[0].coverage.fault_side = 'infra'; recs[0].coverage.state = 'unassessed_infra'; recs[0].coverage.attribution = 'infrastructure'; });
+    assert.match(problems(r), /must make the state unassessed_tool|ranks below the stated skip fault tool/);
+    rewrite(r, f, (recs) => { recs[0].coverage.skips = [{ stage: 'a', reason: 'rate_limited', fault: 'infra' }, { stage: 'b', reason: 'x' }]; recs[0].coverage.fault_side = 'subject'; recs[0].coverage.state = 'subject'; recs[0].coverage.attribution = 'server_condition'; });
+    assert.match(problems(r), /ranks below the stated skip fault infra/);
+  } finally { r.done(); }
+  const dir = mkdtempSync(path.join(tmpdir(), 'verify-gone-'));
+  try {
+    gitIn(dir, 'init', '-q');
+    mkdirSync(path.join(dir, 'data'));
+    cpSync(path.join(sample, 'manifest.json'), path.join(dir, 'data/manifest.json'));
+    gitIn(dir, 'add', '.'); gitIn(dir, 'commit', '-q', '-m', 'one');
+    rmSync(path.join(dir, 'data/manifest.json')); gitIn(dir, 'add', '-A'); gitIn(dir, 'commit', '-q', '-m', 'gone');
+    assert.match(verifyHistory(dir).join('\n'), /manifest\.json was removed/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
