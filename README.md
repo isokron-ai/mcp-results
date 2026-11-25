@@ -2,7 +2,7 @@
 
 This repository will hold the results of IsoKron's tool-qa loop: our measurements of open-source MCP servers. Each result will say what we measured, how, with which tool version, and when.
 
-**Status: not publishing yet. This repository holds schemas and registers only.** There is no data here. Nothing in it has been collected for release, and nothing should be read as a finding about any server.
+**Status: not publishing yet. This repository holds schemas and registers only.** There is no data here. Nothing in it has been collected for release, and nothing should be read as a finding about any server. The path that will publish results (format, checker, corrections) is built and switched off; see [docs/DATA.md](docs/DATA.md).
 
 ## What is here
 
@@ -12,6 +12,9 @@ This repository will hold the results of IsoKron's tool-qa loop: our measurement
 | `sources/rights.yaml` | The source-rights register: each outside source we read, the terms that apply, and what we may republish. Unknowns are marked `unknown` or `TODO-verify`. |
 | `schema/` | JSON Schemas (draft 2020-12) for the two files above. |
 | `scripts/validate.mjs` | Checks both files against the schemas. No dependencies. Needs Node 22 or later. |
+| `schema/record.schema.json`, `manifest.schema.json`, `correction.schema.json` | The shape of the published data: one result per line, the manifest, and corrections. |
+| `scripts/verify.mjs` | Checks the published data under `data/` the way a consumer can: digests, schemas, the registry, coverage, corrections. Passes when there is no `data/` yet. |
+| `docs/DATA.md` | The data format, what is and is not published, how to check it, and how corrections work. |
 | `docs/METHODOLOGY.md` | A stub. It will be written before the first release. |
 
 Run the checks with:
@@ -19,6 +22,7 @@ Run the checks with:
 ```
 node --test 'test/*.test.mjs'
 node scripts/validate.mjs
+node scripts/verify.mjs
 ```
 
 ## Licences
