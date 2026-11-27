@@ -15,13 +15,14 @@
 #   class      publish class, explained below
 #   redaction  null, or a list of redaction rule ids (R1 to R4) applied before
 #              the value is stored
-#   status     planned: not emitted by any merged worker code or by ingest yet
-#              active: emitted by merged worker code (scan-static, live-probe,
-#                meta-github, meta-registry, release-diff, writecheck) or set by
-#                tool-qa ingest. The lane
-#                may be disabled: which lanes the live loop runs is in tool-qa
-#                pump/workflows.json (`enabled`), not here, so "active" does
-#                not mean collected today
+#   status     planned: not seen in any accepted result yet. The emitter may be merged
+#              (a note on the entry says so); a field is not active on the strength of
+#              code
+#              active: seen in at least one accepted result of the live loop (the
+#              evidence table in the pull request that set it), written by a merged
+#              worker or set by tool-qa ingest. The lane may be disabled now: which
+#              lanes the live loop runs is in tool-qa pump/workflows.json (`enabled`),
+#              not here, so "active" does not mean collected today
 #              deprecated: no longer emitted; ingest refuses it
 #
 # Publish classes, in plain words
@@ -160,6 +161,7 @@ fields:
   - {id: tool_count, layer: protocol, type: integer, unit: count, source: scan-live, class: P, redaction: null, status: active}
   - {id: tool_list_sha256, layer: protocol, type: hash, unit: none, source: scan-live, class: P, redaction: null, status: active}
   - {id: pagination_behaviour, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: [R2], status: active}
+  # emitter merged (mcp-check corpus/live-probe.mjs b4ed72a, EMIT_FUZZ_FIELDS off), not yet seen in results.
   - {id: list_determinism, layer: protocol, type: boolean, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: resources_list, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: [R1], status: planned}
   - {id: resources_description_text, layer: protocol, type: string, unit: none, source: scan-live, class: P-t, redaction: [R1], status: planned}

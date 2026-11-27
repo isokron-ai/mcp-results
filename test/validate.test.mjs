@@ -138,7 +138,7 @@ test('R-RES-01: the fields emitted by merged worker code (the lane may be disabl
   assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 372 - written.length);
   // The header says what active means, and that it is not the live loop's lane state.
   const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
-  assert.match(header, /active: emitted by merged worker code/);
+  assert.match(header, /active: seen in at least one accepted result/);
   assert.match(header, /pump\/workflows\.json/);
   assert.doesNotMatch(header, /written today/);
 });
@@ -228,4 +228,14 @@ test('R-RES-13: the 24 fields found emitted by merged worker code while still pl
   for (const id of emitted) assert.equal(status.get(id), 'active', id);
   // list_determinism is written only while EMIT_FUZZ_FIELDS is on (off in mcp-check main); the moves are derived, not written
   for (const id of ['list_determinism', 'git_tag_moves', 'oci_tag_moves', 'catalog_drift_same_version']) assert.equal(status.get(id), 'planned', id);
+});
+
+test('R-RES-14: `active` means seen in accepted results, not read from code; a field whose emitter is merged but never seen carries that note', () => {
+  const raw = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8');
+  const header = raw.split('\nversion:')[0];
+  assert.match(header, /planned: not seen in any accepted result yet/);
+  assert.match(header, /a field is not active on the strength of\n#\s+code/);
+  assert.doesNotMatch(header, /active: emitted by merged worker code/);
+  // list_determinism: emitter merged, switched off, in no accepted result (27 Nov scan of 18,834 accepted items)
+  assert.match(raw, /# emitter merged \(mcp-check corpus\/live-probe\.mjs b4ed72a, EMIT_FUZZ_FIELDS off\), not yet seen in results\.\n  - \{id: list_determinism,/);
 });
