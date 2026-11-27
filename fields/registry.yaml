@@ -15,12 +15,14 @@
 #   class      publish class, explained below
 #   redaction  null, or a list of redaction rule ids (R1 to R4) applied before
 #              the value is stored
-#   status     planned: not emitted by any merged worker code or by ingest yet
-#              active: emitted by merged worker code (scan-static, live-probe,
-#                meta-github, meta-registry) or set by tool-qa ingest. The lane
-#                may be disabled: which lanes the live loop runs is in tool-qa
-#                pump/workflows.json (`enabled`), not here, so "active" does
-#                not mean collected today
+#   status     planned: not seen in any accepted result yet. The emitter may be merged
+#              (a note on the entry says so); a field is not active on the strength of
+#              code
+#              active: seen in at least one accepted result of the live loop (the
+#              evidence table in the pull request that set it), written by a merged
+#              worker or set by tool-qa ingest. The lane may be disabled now: which
+#              lanes the live loop runs is in tool-qa pump/workflows.json (`enabled`),
+#              not here, so "active" does not mean collected today
 #              deprecated: no longer emitted; ingest refuses it
 #
 # Publish classes, in plain words
@@ -143,7 +145,7 @@ fields:
   - {id: tool_input_schema_text, layer: protocol, type: object, unit: none, source: scan-live, class: P-t, redaction: [R1], status: planned}
   - {id: tool_input_schema_sha256, layer: protocol, type: hash, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: tool_output_schema_sha256, layer: protocol, type: hash, unit: none, source: scan-live, class: P, redaction: null, status: planned}
-  - {id: tool_annotations_declared, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
+  - {id: tool_annotations_declared, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
   - {id: tool_annotations_effective, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: tool_icons_sha256, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: tool_meta_keys, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: null, status: planned}
@@ -159,6 +161,7 @@ fields:
   - {id: tool_count, layer: protocol, type: integer, unit: count, source: scan-live, class: P, redaction: null, status: active}
   - {id: tool_list_sha256, layer: protocol, type: hash, unit: none, source: scan-live, class: P, redaction: null, status: active}
   - {id: pagination_behaviour, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: [R2], status: active}
+  # emitter merged (mcp-check corpus/live-probe.mjs b4ed72a, EMIT_FUZZ_FIELDS off), not yet seen in results.
   - {id: list_determinism, layer: protocol, type: boolean, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: resources_list, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: [R1], status: planned}
   - {id: resources_description_text, layer: protocol, type: string, unit: none, source: scan-live, class: P-t, redaction: [R1], status: planned}
@@ -189,10 +192,10 @@ fields:
   # not_applicable, the scenarios run, and every scenario of the frozen set not run, with why (calls_tool,
   # gets_prompt, reads_resource, subscribes, changes_server_state, needs_fixture_server, transport_only, or a time or
   # install reason). conformance_checks: one entry per check: spec_revision, scenario, check, status, scored.
-  - {id: sdk_client_results, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: null, status: planned}
-  - {id: conformance_suite, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
-  - {id: conformance_summary, layer: protocol, type: object, unit: count, source: scan-live, class: P, redaction: null, status: planned}
-  - {id: conformance_checks, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: null, status: planned}
+  - {id: sdk_client_results, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: null, status: active}
+  - {id: conformance_suite, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
+  - {id: conformance_summary, layer: protocol, type: object, unit: count, source: scan-live, class: P, redaction: null, status: active}
+  - {id: conformance_checks, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: null, status: active}
   - {id: tasks_extension_behaviour, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: cancellation_behaviour, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: error_battery_results, layer: protocol, type: array, unit: none, source: scan-live, class: P, redaction: [R1], status: planned}
@@ -229,11 +232,11 @@ fields:
   - {id: tool_verb_family, layer: derived_semantics, type: enum, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: annotation_honesty_inferred, layer: derived_semantics, type: object, unit: none, source: ingest-compact, class: P-h, redaction: null, status: planned}
   - {id: annotation_honesty_confirmed, layer: derived_semantics, type: object, unit: none, source: ingest-compact, class: B, redaction: null, status: planned}
-  - {id: annotation_completeness, layer: derived_semantics, type: object, unit: ratio, source: ingest-compact, class: P, redaction: null, status: planned}
-  - {id: idempotency_evidence_params, layer: derived_semantics, type: array, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
-  - {id: idempotency_evidence_behaviour, layer: derived_semantics, type: object, unit: none, source: ingest-compact, class: B, redaction: null, status: planned}
-  - {id: concurrency_guard_params, layer: derived_semantics, type: array, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
-  - {id: safety_params, layer: derived_semantics, type: array, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
+  - {id: annotation_completeness, layer: derived_semantics, type: object, unit: ratio, source: ingest-compact, class: P, redaction: null, status: active}
+  - {id: idempotency_evidence_params, layer: derived_semantics, type: array, unit: none, source: ingest-compact, class: P, redaction: null, status: active}
+  - {id: idempotency_evidence_behaviour, layer: derived_semantics, type: object, unit: none, source: ingest-compact, class: B, redaction: null, status: active}
+  - {id: concurrency_guard_params, layer: derived_semantics, type: array, unit: none, source: ingest-compact, class: P, redaction: null, status: active}
+  - {id: safety_params, layer: derived_semantics, type: array, unit: none, source: ingest-compact, class: P, redaction: null, status: active}
   - {id: bulk_tool_flag, layer: derived_semantics, type: boolean, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: list_tool_pagination_params, layer: derived_semantics, type: object, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: result_size_risk, layer: derived_semantics, type: object, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
@@ -329,10 +332,10 @@ fields:
   # duplicate_entry, special_entry, no_source_overlap, artifact_unreadable. Paths are upstream text (R1).
   # release_diff_held: anything that looks malicious (indicator rule ids only, never the matched text) or
   # exposes a secret; security-class, so it is left out of the three fields above, counts included.
-  - {id: release_artifacts, layer: source_build, type: array, unit: none, source: release-diff, class: P, redaction: [R1], status: planned}
-  - {id: release_diff_summary, layer: source_build, type: array, unit: count, source: release-diff, class: P, redaction: [R1], status: planned}
-  - {id: release_diff_findings, layer: source_build, type: array, unit: none, source: release-diff, class: P-h, redaction: [R1], status: planned}
-  - {id: release_diff_held, layer: source_build, type: array, unit: none, source: release-diff, class: S, redaction: [R1], status: planned}
+  - {id: release_artifacts, layer: source_build, type: array, unit: none, source: release-diff, class: P, redaction: [R1], status: active}
+  - {id: release_diff_summary, layer: source_build, type: array, unit: count, source: release-diff, class: P, redaction: [R1], status: active}
+  - {id: release_diff_findings, layer: source_build, type: array, unit: none, source: release-diff, class: P-h, redaction: [R1], status: active}
+  - {id: release_diff_held, layer: source_build, type: array, unit: none, source: release-diff, class: S, redaction: [R1], status: active}
   - {id: repo_core, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: [R3], status: active}
   - {id: repo_owner_type, layer: repo_ecosystem, type: enum, unit: none, source: meta-github, class: P, redaction: [R3], status: active}
   - {id: repo_popularity, layer: repo_ecosystem, type: object, unit: count, source: meta-github, class: P, redaction: null, status: active}
@@ -345,8 +348,8 @@ fields:
   # git_tag_targets: the newest tags by commit date (at most 100), each with the commit it points to (an annotated tag
   # peeled once), the tag object for an annotated tag, and the commit and tagger dates. git_tag_map_sha256: sha256 of
   # the canonical JSON of that tag -> target list, a cheap "did any tag change" value.
-  - {id: git_tag_targets, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: null, status: planned}
-  - {id: git_tag_map_sha256, layer: repo_ecosystem, type: hash, unit: none, source: meta-github, class: P, redaction: null, status: planned}
+  - {id: git_tag_targets, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: null, status: active}
+  - {id: git_tag_map_sha256, layer: repo_ecosystem, type: hash, unit: none, source: meta-github, class: P, redaction: null, status: active}
   - {id: issues_prs_summary, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: null, status: active}
   - {id: issue_details, layer: repo_ecosystem, type: array, unit: none, source: meta-github, class: X, redaction: [R3], status: planned}
   - {id: security_posture, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: null, status: active}
@@ -374,7 +377,7 @@ fields:
   # The digest each OCI tag a registry entry declares resolves to, read with a registry HEAD (or manifest) request on
   # the allowlisted hosts only; no layer is pulled. One element per image reference and tag; an empty list means the
   # subject declares no OCI package. A tag that resolves to a new digest is an oci_tag_moves event.
-  - {id: oci_tag_digests, layer: repo_ecosystem, type: array, unit: none, source: meta-registry, class: P, redaction: null, status: planned}
+  - {id: oci_tag_digests, layer: repo_ecosystem, type: array, unit: none, source: meta-registry, class: P, redaction: null, status: active}
   - {id: depsdev_facts, layer: repo_ecosystem, type: object, unit: none, source: meta-registry, class: P, redaction: null, status: active}
   - {id: scorecard_result, layer: repo_ecosystem, type: object, unit: none, source: scan-deep, class: P, redaction: null, status: planned}
   - {id: scorecard_api_result, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: null, status: active}
@@ -440,8 +443,8 @@ fields:
   # full | clients_only, why, ms). oracle_disagreements: the worker's own disagreements between our reader, the SDK
   # clients and the conformance suite, each with its design class (D4 schema_mismatch, D6 live_client, D7
   # lint_vs_conformance, D12 crash/timeout), the two oracles, the kind and counts; leads for triage, never a verdict.
-  - {id: oracle_stage, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
-  - {id: oracle_disagreements, layer: tool_telemetry, type: array, unit: none, source: scan-live, class: X, redaction: null, status: planned}
+  - {id: oracle_stage, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
+  - {id: oracle_disagreements, layer: tool_telemetry, type: array, unit: none, source: scan-live, class: X, redaction: null, status: active}
   - {id: coverage_contribution, layer: tool_telemetry, type: object, unit: none, source: ingest-compact, class: PA, redaction: null, status: planned}
   - {id: canary_run_outcomes, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: runner_env, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
@@ -453,20 +456,20 @@ fields:
   - {id: rate_limit_telemetry, layer: tool_telemetry, type: object, unit: none, source: loop-telemetry, class: X, redaction: null, status: planned}
   - {id: redaction_telemetry, layer: tool_telemetry, type: object, unit: count, source: ingest-compact, class: X, redaction: null, status: planned}
   - {id: sandbox_tier, layer: tool_telemetry, type: enum, unit: none, source: scan-live, class: P, redaction: null, status: active}
-  - {id: requirement_verdicts, layer: write_tests, type: array, unit: none, source: writecheck, class: B, redaction: null, status: planned}
+  - {id: requirement_verdicts, layer: write_tests, type: array, unit: none, source: writecheck, class: B, redaction: null, status: active}
   - {id: record_id, layer: write_tests, type: string, unit: none, source: writecheck, class: B, redaction: null, status: planned}
-  - {id: conflict_behaviour, layer: write_tests, type: object, unit: none, source: writecheck, class: B, redaction: null, status: planned}
+  - {id: conflict_behaviour, layer: write_tests, type: object, unit: none, source: writecheck, class: B, redaction: null, status: active}
   - {id: write_error_shapes, layer: write_tests, type: object, unit: none, source: writecheck, class: P, redaction: null, status: planned}
   - {id: write_error_text, layer: write_tests, type: string, unit: none, source: writecheck, class: P-t, redaction: [R1], status: planned}
   - {id: backend_state_before_after, layer: write_tests, type: object, unit: none, source: writecheck, class: B, redaction: null, status: planned}
   - {id: backend_operation_counters, layer: write_tests, type: object, unit: count, source: writecheck, class: B, redaction: null, status: planned}
   - {id: backend_operation_counters_aggregate, layer: write_tests, type: object, unit: count, source: writecheck, class: PA, redaction: null, status: planned}
-  - {id: backend_version, layer: write_tests, type: string, unit: none, source: writecheck, class: P, redaction: null, status: planned}
+  - {id: backend_version, layer: write_tests, type: string, unit: none, source: writecheck, class: P, redaction: null, status: active}
   - {id: per_tool_write_counts, layer: write_tests, type: object, unit: count, source: writecheck, class: B, redaction: null, status: planned}
   - {id: jsonrpc_transcript, layer: write_tests, type: string, unit: none, source: writecheck, class: X, redaction: [R1, R2, R4], status: planned}
-  - {id: plan_hash_and_drift, layer: write_tests, type: object, unit: none, source: writecheck, class: X, redaction: null, status: planned}
+  - {id: plan_hash_and_drift, layer: write_tests, type: object, unit: none, source: writecheck, class: X, redaction: null, status: active}
   - {id: barrier_pair_repetitions, layer: write_tests, type: array, unit: none, source: writecheck, class: B, redaction: null, status: planned}
-  - {id: annotation_honesty_behaviour_confirmed, layer: write_tests, type: object, unit: none, source: writecheck, class: B, redaction: null, status: planned}
+  - {id: annotation_honesty_behaviour_confirmed, layer: write_tests, type: object, unit: none, source: writecheck, class: B, redaction: null, status: active}
   # catalog_snapshot_id: sha256(JCS(initialize + tools/list)), set by ingest; see tool_list_sha256 for the difference.
   - {id: catalog_snapshot_id, layer: longitudinal, type: hash, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: catalog_fingerprints, layer: longitudinal, type: object, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
