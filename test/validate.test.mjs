@@ -133,9 +133,10 @@ test('R-RES-01: the fields emitted by merged worker code (the lane may be disabl
   const active = doc.fields.filter((f) => f.status === 'active').map((f) => f.id).sort();
   const written = [...new Set(Object.values(WRITTEN).flat())].sort();
   assert.deepEqual(active, written);
-  // 357 on 23 Nov, + 6 live-probe oracle fields (#8), + 5 drift-signal fields (#9), + 4 release-diff fields.
-  assert.equal(doc.fields.length, 372);
-  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 372 - written.length);
+  // 357 on 23 Nov, + 6 live-probe oracle fields (#8), + 5 drift-signal fields (#9), + 4 release-diff fields,
+  // + tool_names_sha256 (live-probe, planned until seen).
+  assert.equal(doc.fields.length, 373);
+  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 373 - written.length);
   // The header says what active means, and that it is not the live loop's lane state.
   const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
   assert.match(header, /active: seen in at least one accepted result/);
@@ -238,4 +239,13 @@ test('R-RES-14: `active` means seen in accepted results, not read from code; a f
   assert.doesNotMatch(header, /active: emitted by merged worker code/);
   // list_determinism: emitter merged, switched off, in no accepted result (27 Nov scan of 18,834 accepted items)
   assert.match(raw, /# emitter merged \(mcp-check corpus\/live-probe\.mjs b4ed72a, EMIT_FUZZ_FIELDS off\), not yet seen in results\.\n  - \{id: list_determinism,/);
+});
+
+test('R-RES-15: tool_names_sha256 is declared for the live-probe lane: a hash in the protocol layer, planned until seen, next to tool_list_sha256', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const i = doc.fields.findIndex((f) => f.id === 'tool_names_sha256');
+  assert.ok(i > 0);
+  const f = doc.fields[i];
+  assert.deepEqual([f.layer, f.type, f.unit, f.source, f.class, f.redaction, f.status], ['protocol', 'hash', 'none', 'scan-live', 'P', null, 'planned']);
+  assert.equal(doc.fields[i - 1].id, 'tool_list_sha256');
 });
