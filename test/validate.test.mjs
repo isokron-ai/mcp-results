@@ -102,7 +102,7 @@ test('registry uses only the documented class letters', () => {
 
 // The fields merged worker code emits, whether or not its lane is enabled in the live loop (tool-qa
 // pump/workflows.json says which are) (mcp-check corpus/scan-static.mjs observationsOf and
-// corpus/live-probe.mjs FIELDS + TOOL_LIST_FIELDS; tool-qa meta/github.mjs FIELDS + scorecard_api_result and
+// corpus/live-probe.mjs FIELDS + TOOL_LIST_FIELDS + ORACLE_FIELDS; mcp-writecheck-action loop/summary.mjs; tool-qa meta/release-diff.mjs; tool-qa meta/github.mjs FIELDS + scorecard_api_result and
 // meta/registry.mjs), and those tool-qa ingest sets for every result (R-COV-02).
 const WRITTEN = {
   'scan-static': ['commit_sha', 'commit_date', 'registration_provenance'],
@@ -112,11 +112,19 @@ const WRITTEN = {
     'instructions_sha256', 'startup_ms', 'latency_cold_ms', 'startup_without_config', 'config_state', 'catalog_per_config_state', 'stdout_noise_lines',
     'stderr_counts', 'list_changed_notifications', 'pagination_behaviour', 'step_telemetry', 'sandbox_tier', 'runner_env', 'our_tool_versions',
     'observation_coverage', 'install_phase_behaviour', 'network_event', 'error_taxonomy_code', 'static_vs_live_agreement', 'commit_sha', 'commit_date',
-    'tool_count', 'tool_list_sha256'],
+    'tool_count', 'tool_list_sha256',
+    // the oracle stage (corpus/live-probe.mjs ORACLE_FIELDS, EMIT_ORACLE_FIELDS on)
+    'oracle_stage', 'sdk_client_results', 'conformance_suite', 'conformance_summary', 'conformance_checks', 'oracle_disagreements'],
+  // mcp-writecheck-action loop/summary.mjs add(...)
+  writecheck: ['tool_annotations_declared', 'safety_params', 'requirement_verdicts', 'plan_hash_and_drift', 'backend_version', 'conflict_behaviour',
+    'annotation_completeness', 'annotation_honesty_behaviour_confirmed', 'idempotency_evidence_behaviour', 'idempotency_evidence_params', 'concurrency_guard_params'],
+  // tool-qa meta/release-diff.mjs record(...)
+  'release-diff': ['release_diff_summary', 'release_diff_findings', 'release_diff_held', 'release_artifacts'],
   'meta-github': ['repo_core', 'repo_owner_type', 'repo_popularity', 'owner_org_facts', 'releases_summary', 'issues_prs_summary',
-    'contributors_counts', 'security_posture', 'branch_rules_public', 'community_profile', 'workflow_health', 'scorecard_api_result'],
+    'contributors_counts', 'security_posture', 'branch_rules_public', 'community_profile', 'workflow_health', 'scorecard_api_result',
+    'git_tag_targets', 'git_tag_map_sha256'],
   'meta-registry': ['registry_entry_history', 'npm_version_doc', 'npm_maintainer_count_and_change', 'npm_attestations', 'pypi_info',
-    'pypi_project_status', 'pypi_provenance', 'crates_crate_facts', 'go_module_facts', 'depsdev_facts'],
+    'pypi_project_status', 'pypi_provenance', 'crates_crate_facts', 'go_module_facts', 'depsdev_facts', 'oci_tag_digests'],
   'tool-qa ingest': ['fault_side', 'coverage_state'],
 };
 
@@ -161,8 +169,9 @@ test('R-RES-03: the drift signals are declared: tag targets and image digests pe
     const f = byId.get(id);
     assert.ok(f, id);
     assert.deepEqual([f.layer, f.type, f.source, f.class, f.redaction], [layer, type, source, cls, null], id);
-    // Not active until the tool-qa code that emits them is merged (R-RES-01).
-    assert.equal(f.status, 'planned', id);
+    // Active once the code that emits them is merged (R-RES-01): the three observations are (tool-qa meta/github.mjs,
+    // meta/registry.mjs); the moves are derived afterwards, and no merged code writes them as fields yet.
+    assert.equal(f.status, ['git_tag_targets', 'git_tag_map_sha256', 'oci_tag_digests'].includes(id) ? 'active' : 'planned', id);
   }
 });
 
@@ -204,6 +213,19 @@ test('the release-diff fields are declared: artifacts and summary public, findin
     const f = byId.get(id);
     assert.ok(f, id);
     const red = f.redaction === null || f.redaction === 'null' ? 'null' : f.redaction.join(',');
-    assert.deepEqual([f.layer, f.type, f.source, f.class, red, f.status], [...w, 'planned'], id);
+    assert.deepEqual([f.layer, f.type, f.source, f.class, red, f.status], [...w, 'active'], id);
   }
+});
+
+test('R-RES-13: the 24 fields found emitted by merged worker code while still planned (27 Nov: drift signals, oracle stage, release-diff, writecheck) are active; the unemitted fuzz and derived ones stay planned', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const status = new Map(doc.fields.map((f) => [f.id, f.status]));
+  const emitted = ['git_tag_targets', 'git_tag_map_sha256', 'oci_tag_digests', 'release_artifacts', 'release_diff_summary', 'release_diff_findings', 'release_diff_held',
+    'oracle_stage', 'sdk_client_results', 'conformance_suite', 'conformance_summary', 'conformance_checks', 'oracle_disagreements',
+    'tool_annotations_declared', 'safety_params', 'requirement_verdicts', 'plan_hash_and_drift', 'backend_version', 'conflict_behaviour',
+    'annotation_completeness', 'annotation_honesty_behaviour_confirmed', 'idempotency_evidence_behaviour', 'idempotency_evidence_params', 'concurrency_guard_params'];
+  assert.equal(emitted.length, 24);
+  for (const id of emitted) assert.equal(status.get(id), 'active', id);
+  // list_determinism is written only while EMIT_FUZZ_FIELDS is on (off in mcp-check main); the moves are derived, not written
+  for (const id of ['list_determinism', 'git_tag_moves', 'oci_tag_moves', 'catalog_drift_same_version']) assert.equal(status.get(id), 'planned', id);
 });
