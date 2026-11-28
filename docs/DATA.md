@@ -43,7 +43,7 @@ The shape is `schema/record.schema.json`.
 | `subject` | subject | `server_condition` | A property of the server (needs credentials, does not build). Still not a verdict. |
 | `excluded` | policy | `our_policy` | We chose not to run it. |
 
-When a result has several skips, our own limit wins: one skip of ours makes the state `unassessed_tool`. `coverage.skips` lists each skip: stage, reason, who it is down to, and whether it can be retried. A server with no record has not been measured in that lane; that is not a result.
+When a result has several skips, our own limit wins: one skip of ours makes the state `unassessed_tool`. `coverage.skips` lists each skip: stage, reason, who it is down to, whether it can be retried, and its `code` when the worker gave one (a short snake_case string, `^[a-z][a-z0-9_]{1,47}$`, that says more than the reason, for example `go_install_not_supported`). A server with no record has not been measured in that lane; that is not a result.
 
 A result whose every field was left out (none is public) is not published at all: with no observations and no skip it would read as a clean assessment. A record with no observations is therefore always one with a skip, and says whose limit it was.
 
