@@ -430,6 +430,10 @@ fields:
   - {id: disk_footprint_bytes, layer: runtime, type: integer, unit: bytes, source: scan-live, class: P, redaction: null, status: planned}
   - {id: observation_coverage, layer: runtime, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
   - {id: our_tool_versions, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
+  # The change a live-probe retry made to the plan's launch when the retry's run is the one measured (mcp-check
+  # R-LP-81): { reason, change }, e.g. { reason: mcp_drift, change: { constraints: [mcp<2] } } or { reason:
+  # cli_subcommand, change: { args_prefix: [mcp] } }. Absent when the plan's own launch ran. Planned until seen.
+  - {id: launch_retry, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: release_gate_passed, layer: tool_telemetry, type: boolean, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: real_repo_qa_run_id, layer: tool_telemetry, type: string, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: step_telemetry, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
