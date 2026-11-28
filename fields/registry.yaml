@@ -160,6 +160,12 @@ fields:
   # the tools/list answer, so it changes when serverInfo, capabilities or instructions change though the tools do not.
   - {id: tool_count, layer: protocol, type: integer, unit: count, source: scan-live, class: P, redaction: null, status: active}
   - {id: tool_list_sha256, layer: protocol, type: hash, unit: none, source: scan-live, class: P, redaction: null, status: active}
+  # The live list's tool names alone: sha256 of the JSON array of the tool names (the tools/list wire names, as
+  # tool_count counts them), each once, in the default JavaScript sort (UTF-16 code-unit order, no case or space
+  # folding); null when the list names no tool. The same value as the ast-grep oracle's tool_set_sha256 (mcp-check
+  # corpus/ast-grep/index.mjs), so a source read and the live list can be compared by names (tool-qa state/oracle.mjs,
+  # the three-way rule). Written by the live-probe lane of mcp-check; planned until seen in accepted results.
+  - {id: tool_names_sha256, layer: protocol, type: hash, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: pagination_behaviour, layer: protocol, type: object, unit: none, source: scan-live, class: P, redaction: [R2], status: active}
   # emitter merged (mcp-check corpus/live-probe.mjs b4ed72a, EMIT_FUZZ_FIELDS off), not yet seen in results.
   - {id: list_determinism, layer: protocol, type: boolean, unit: none, source: scan-live, class: P, redaction: null, status: planned}
