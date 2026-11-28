@@ -134,9 +134,9 @@ test('R-RES-01: the fields emitted by merged worker code (the lane may be disabl
   const written = [...new Set(Object.values(WRITTEN).flat())].sort();
   assert.deepEqual(active, written);
   // 357 on 23 Nov, + 6 live-probe oracle fields (#8), + 5 drift-signal fields (#9), + 4 release-diff fields,
-  // + tool_names_sha256 (live-probe, planned until seen), + launch_retry (live-probe, planned until seen).
-  assert.equal(doc.fields.length, 374);
-  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 374 - written.length);
+  // + tool_names_sha256 (live-probe, planned until seen), + launch_retry (live-probe, planned until seen), + skip_codes (ingest, planned).
+  assert.equal(doc.fields.length, 375);
+  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 375 - written.length);
   // The header says what active means, and that it is not the live loop's lane state.
   const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
   assert.match(header, /active: seen in at least one accepted result/);
