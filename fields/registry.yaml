@@ -342,6 +342,17 @@ fields:
   - {id: release_diff_summary, layer: source_build, type: array, unit: count, source: release-diff, class: P, redaction: [R1], status: active}
   - {id: release_diff_findings, layer: source_build, type: array, unit: none, source: release-diff, class: P-h, redaction: [R1], status: active}
   - {id: release_diff_held, layer: source_build, type: array, unit: none, source: release-diff, class: S, redaction: [R1], status: active}
+  # The meta-backend lane (tool-qa meta/backend.mjs): what a subject's write tools write to, read from its source
+  # archive as data (manifests, lockfile-free dependency lists, compose files, env examples, server.json, README,
+  # OpenAPI files, code text); nothing from the subject is installed or run. write_backend (R1: paths, tool names
+  # and env names are upstream text): class (local_full | mock_min | none), reason (for none: no_backend_signal |
+  # hosted_without_spec | stand_in_not_cleared | no_stand_in | not_a_store | no_write_tools_seen), backends (id,
+  # kind, score, signals, role primary | secondary | candidate), stand_in (id, product, fidelity) for local_full,
+  # spec_url and spec_format for mock_min, env_names and base_url_env (names only, never values), confidence
+  # (high | medium | low), evidence (signal, backend, path, detail; capped), write_tools (names seen, write-like
+  # count, a sample), basis (archive or root files, commit, files read) and the versions of the two data maps
+  # (meta/data/stand-ins.json, meta/data/spec-urls.json). Read from source, so P-s: a claim about the code.
+  - {id: write_backend, layer: source_build, type: object, unit: none, source: meta-backend, class: P-s, redaction: [R1], status: planned}
   - {id: repo_core, layer: repo_ecosystem, type: object, unit: none, source: meta-github, class: P, redaction: [R3], status: active}
   - {id: repo_owner_type, layer: repo_ecosystem, type: enum, unit: none, source: meta-github, class: P, redaction: [R3], status: active}
   - {id: repo_popularity, layer: repo_ecosystem, type: object, unit: count, source: meta-github, class: P, redaction: null, status: active}

@@ -27,7 +27,7 @@
         "source": {
           "enum": [
             "discover", "meta-github", "meta-registry", "scan-static", "scan-live", "scan-deep",
-            "build-probe", "writecheck", "ingest-compact", "loop-telemetry", "remote-meta", "release-diff"
+            "build-probe", "writecheck", "ingest-compact", "loop-telemetry", "remote-meta", "release-diff", "meta-backend"
           ]
         },
         "class": { "enum": ["P", "P-s", "P-h", "P-t", "PA", "B", "S", "M", "X"] },
