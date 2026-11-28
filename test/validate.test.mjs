@@ -134,9 +134,10 @@ test('R-RES-01: the fields emitted by merged worker code (the lane may be disabl
   const written = [...new Set(Object.values(WRITTEN).flat())].sort();
   assert.deepEqual(active, written);
   // 357 on 23 Nov, + 6 live-probe oracle fields (#8), + 5 drift-signal fields (#9), + 4 release-diff fields,
-  // + tool_names_sha256 (live-probe, planned until seen), + write_backend (meta-backend, planned until seen).
-  assert.equal(doc.fields.length, 374);
-  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 374 - written.length);
+  // + tool_names_sha256 (live-probe, planned until seen), + launch_retry (live-probe, planned until seen), + skip_codes (ingest, planned),
+  // + write_backend (meta-backend, planned until seen).
+  assert.equal(doc.fields.length, 376);
+  assert.equal(doc.fields.filter((f) => f.status === 'planned').length, 376 - written.length);
   // The header says what active means, and that it is not the live loop's lane state.
   const header = readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8').split('\nversion:')[0];
   assert.match(header, /active: seen in at least one accepted result/);
@@ -250,13 +251,20 @@ test('R-RES-15: tool_names_sha256 is declared for the live-probe lane: a hash in
   assert.equal(doc.fields[i - 1].id, 'tool_list_sha256');
 });
 
-test('R-RES-16: write_backend is declared for the meta-backend lane: an object read from source (P-s, R1), planned until seen, next to the release-diff fields', () => {
+test('R-RES-16: launch_retry is declared for the live-probe lane: an object in tool_telemetry, planned until seen', () => {
   const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
-  const i = doc.fields.findIndex((f) => f.id === 'write_backend');
-  assert.ok(i > 0);
-  const f = doc.fields[i];
-  assert.deepEqual([f.layer, f.type, f.unit, f.source, f.class, f.redaction, f.status], ['source_build', 'object', 'none', 'meta-backend', 'P-s', ['R1'], 'planned']);
-  assert.equal(doc.fields[i - 1].id, 'release_diff_held');
-  // Nothing else is emitted by meta-backend: one field, so a second one needs its own declaration.
-  assert.deepEqual(doc.fields.filter((x) => x.source === 'meta-backend').map((x) => x.id), ['write_backend']);
+  const f = doc.fields.find((x) => x.id === 'launch_retry');
+  assert.ok(f);
+  assert.deepEqual([f.layer, f.type, f.unit, f.source, f.class, f.redaction, f.status], ['tool_telemetry', 'object', 'none', 'scan-live', 'P', null, 'planned']);
+});
+
+test('R-RES-17: skip_codes is declared for ingest, planned, and the record schema bounds a skip code', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const f = doc.fields.find((x) => x.id === 'skip_codes');
+  assert.ok(f);
+  assert.deepEqual([f.layer, f.type, f.unit, f.source, f.class, f.redaction, f.status], ['tool_telemetry', 'array', 'none', 'ingest-compact', 'P', null, 'planned']);
+  const schema = JSON.parse(readFileSync(path.join(root, 'schema/record.schema.json'), 'utf8'));
+  const code = schema.properties.coverage.properties.skips.items.properties.code;
+  assert.deepEqual([code.type, code.pattern], ['string', '^[a-z][a-z0-9_]{1,47}$']);
+  assert.ok(!schema.properties.coverage.properties.skips.items.required.includes('code'));
 });

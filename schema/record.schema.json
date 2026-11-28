@@ -71,6 +71,7 @@
               "stage": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
               "reason": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
               "fault": { "enum": ["tool", "subject", "infra", "policy"] },
+              "code": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,47}$" },
               "retryable": { "const": true }
             }
           }

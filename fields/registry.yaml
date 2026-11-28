@@ -441,6 +441,10 @@ fields:
   - {id: disk_footprint_bytes, layer: runtime, type: integer, unit: bytes, source: scan-live, class: P, redaction: null, status: planned}
   - {id: observation_coverage, layer: runtime, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
   - {id: our_tool_versions, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
+  # The change a live-probe retry made to the plan's launch when the retry's run is the one measured (mcp-check
+  # R-LP-81): { reason, change }, e.g. { reason: mcp_drift, change: { constraints: [mcp<2] } } or { reason:
+  # cli_subcommand, change: { args_prefix: [mcp] } }. Absent when the plan's own launch ran. Planned until seen.
+  - {id: launch_retry, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: planned}
   - {id: release_gate_passed, layer: tool_telemetry, type: boolean, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: real_repo_qa_run_id, layer: tool_telemetry, type: string, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: step_telemetry, layer: tool_telemetry, type: object, unit: none, source: scan-live, class: P, redaction: null, status: active}
@@ -454,6 +458,12 @@ fields:
   # | subject | excluded. A tool-fault skip is unassessed_tool: never excluded, never the server's failure.
   - {id: fault_side, layer: tool_telemetry, type: enum, unit: none, source: ingest-compact, class: P, redaction: null, status: active}
   - {id: coverage_state, layer: tool_telemetry, type: enum, unit: none, source: ingest-compact, class: P, redaction: null, status: active}
+  # skip_codes: the optional `code` of each skip of the result (worker-kit manifest, tool-qa R-COV-49), a short
+  # snake_case string matching ^[a-z][a-z0-9_]{1,47}$ that says more than the skip's reason (for example
+  # go_install_not_supported under no_runnable_artifact). Set by tool-qa ingest from the manifest, kept in the
+  # state, and counted by coverage (R-COV-50); a list of {fault, code}, one per distinct pair. Not written by
+  # workers as an observation. planned until a published record carries it.
+  - {id: skip_codes, layer: tool_telemetry, type: array, unit: none, source: ingest-compact, class: P, redaction: null, status: planned}
   - {id: differential_disagreements, layer: tool_telemetry, type: array, unit: none, source: ingest-compact, class: X, redaction: null, status: planned}
   - {id: differential_disagreement_rates, layer: tool_telemetry, type: object, unit: ratio, source: ingest-compact, class: PA, redaction: null, status: planned}
   # oracle_stage: whether the live-probe oracle stage ran for the subject (status ran | skipped | error | absent, mode
