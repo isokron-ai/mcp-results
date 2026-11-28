@@ -256,3 +256,14 @@ test('R-RES-16: launch_retry is declared for the live-probe lane: an object in t
   assert.ok(f);
   assert.deepEqual([f.layer, f.type, f.unit, f.source, f.class, f.redaction, f.status], ['tool_telemetry', 'object', 'none', 'scan-live', 'P', null, 'planned']);
 });
+
+test('R-RES-17: skip_codes is declared for ingest, planned, and the record schema bounds a skip code', () => {
+  const doc = parseYaml(readFileSync(path.join(root, 'fields/registry.yaml'), 'utf8'));
+  const f = doc.fields.find((x) => x.id === 'skip_codes');
+  assert.ok(f);
+  assert.deepEqual([f.layer, f.type, f.unit, f.source, f.class, f.redaction, f.status], ['tool_telemetry', 'array', 'none', 'ingest-compact', 'P', null, 'planned']);
+  const schema = JSON.parse(readFileSync(path.join(root, 'schema/record.schema.json'), 'utf8'));
+  const code = schema.properties.coverage.properties.skips.items.properties.code;
+  assert.deepEqual([code.type, code.pattern], ['string', '^[a-z][a-z0-9_]{1,47}$']);
+  assert.ok(!schema.properties.coverage.properties.skips.items.required.includes('code'));
+});

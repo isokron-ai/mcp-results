@@ -317,3 +317,14 @@ test('R-RES-12: the fault side must not rank below a skip that states its fault,
     assert.match(verifyHistory(dir).join('\n'), /manifest\.json was removed/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('R-RES-17: a skip code is part of a record, and a code outside the pattern is a problem', () => {
+  const r = root();
+  try {
+    const f = 'results/scan-static/2026-11-24.jsonl';
+    rewrite(r, f, (recs) => { recs[0].coverage.skips[0].code = 'go_install_not_supported'; });
+    assert.deepEqual(verifyData(r.dir).problems, []);
+    rewrite(r, f, (recs) => { recs[0].coverage.skips[0].code = 'Not A Code'; });
+    assert.notDeepEqual(verifyData(r.dir).problems, []);
+  } finally { r.done(); }
+});
